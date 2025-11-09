@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard-MiAutomotriz</title>
+</head>
+<body>
+  <header>
+    <div>
+      <div>
+        <h1 style="margin:.1rem 0">MiApp</h1>
+        <small style="color:#666">Bienvenido, Usuario</small>
+      </div>
+      <nav aria-label="Usuario quick links">
+        <a href="login.html">Cerrar sesión</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Principal">
+      <ul style="list-style:none;padding:0;margin:0">
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="clientes.html">Lista de clientes</a></li>
+        <li><a href="login.html">Login</a></li>
+      </ul>
+    </nav>
+
+    <main>
+      <section aria-labelledby="overview-title" class="grid">
+        <article class="card" id="overview-title">
+          <h2>Resumen</h2>
+          <p>Ingresos: <strong>$12.345</strong></p>
+          <p>Clientes activos: <strong>124</strong></p>
+        </article>
+
+        <article class="card">
+          <h3>Actividades recientes</h3>
+          <ul>
+            <li>Factura #123 generada</li>
+            <li>Cliente "ACME" actualizado</li>
+            <li>Nuevo usuario creado</li>
+          </ul>
+        </article>
+
+        <article class="card quick-actions" aria-labelledby="qa-title">
+          <h3 id="qa-title">Acciones rápidas</h3>
+          <form action="/quick-action" method="post">
+            <label for="quick-client">Buscar cliente</label>
+            <input id="quick-client" name="client-name" type="search" placeholder="Nombre o RUT" />
+
+            <label for="quick-create">Crear nueva cotización</label>
+            <input id="quick-create" name="quote-title" type="text" placeholder="Título de la cotización" />
+
+            <button type="submit">Ejecutar</button>
+          </form>
+        </article>
+      </section>
+
+      <section aria-labelledby="recent-title" class="card">
+        <h2 id="recent-title">Últimas órdenes</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Cliente</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>201</td>
+              <td>ACME S.A.</td>
+              <td>En proceso</td>
+              <td>2025-10-01</td>
+              <td><a href="#">Ver</a> • <a href="#">Editar</a></td>
+            </tr>
+            <tr>
+              <td>200</td>
+              <td>La Empresa</td>
+              <td>Finalizada</td>
+              <td>2025-09-28</td>
+              <td><a href="#">Ver</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p>© 2025 MiApp — Todos los derechos reservados</p>
+  </footer>
+</body>
+</html>

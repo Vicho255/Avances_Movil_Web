@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/gestionEmpleados.css">
+    <title>Gestion de Empleados - MiAutomotriz</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-car-side"></i>
+                <h2>MiAutomotriz</h2>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">Admin Principal</span>
+                    <span class="user-role">Administrador</span>
+                </div>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="dashboardAdmin.html">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html">
+                    <i class="fas fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="gestionEmpleados.html">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Empleados</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-car"></i>
+                    <span>Vehículos</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-tools"></i>
+                    <span>Servicios</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Facturación</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reportes</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a href="login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-left">
+                <h1>Gestión de Empleados</h1>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+                <div class="current-time">
+                    <span id = "currentDateTime"></span>
+                </div>
+            </div>
+        </header>
+
+        <div class="management-container">
+            <section class="employee-management">
+                <div class="list-card">
+                <div class="section-header">
+                    <h2>
+                        <i class="fas fa-list"></i>
+                        Lista de Empleados
+                    </h2>
+                    <div class="list-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchEmpleados" placeholder="Buscar empleados...">
+                            </div>
+                            <button class="btn-export">
+                                <i class="fas fa-download"></i>
+                                Exportar
+                            </button>
+                    </div>
+                </div>
+
+                <div class="employee-table-container">
+                    <table class="employee-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Posición</th>
+                                <th>Correo Electrónico</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody">
+                            <!-- Filas de empleados generadas dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-footer">
+                        <div class="table-info">
+                            Mostrando <span id="employeeCount">0</span> Empleados
+                        </div>
+                        <div class="pagination">
+                            <button class="pagination-btn" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="pagination-info">Página 1 de 1</span>
+                            <button class="pagination-btn">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <button class="add-employee-btn">Agregar Empleado</button>
+                        </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/scripts/gestionEmpleados.js" defer></script>
+</body>
+</html>
