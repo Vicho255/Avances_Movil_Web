@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas - Empleado - MiAutomotriz</title>
+    <link rel="stylesheet" href="/styles/dashoboasrEmpleado.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-car-side"></i>
+                <h2>MiAutomotriz</h2>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">Juan Pérez</span>
+                    <span class="user-role">Técnico - Taller</span>
+                </div>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="/dashboardEmpleado.html">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="#">
+                    <i class="fas fa-tasks"></i>
+                    <span>Mis Tareas</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Agenda</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-car"></i>
+                    <span>Vehículos</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Checklists</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-history"></i>
+                    <span>Historial</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-toolbox"></i>
+                    <span>Inventario</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-file-invoice"></i>
+                    <span>Reportes</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a href="login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <button class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Mis Tareas</h1>
+            </div>
+            <div class="header-right">
+                <div class="shift-info">
+                    <i class="fas fa-clock"></i>
+                    <span>Turno: 08:00 - 17:00</span>
+                </div>
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">5</span>
+                    </button>
+                    <button class="break-btn" id="breakToggle">
+                        <i class="fas fa-coffee"></i>
+                        <span>En Turno</span>
+                    </button>
+                </div>
+                <div class="current-time">
+                    <span id="currentDateTime"></span>
+                </div>
+            </div>
+        </header>
+        <!-- Main Content Grid -->
+        <section class="content-grid">
+
+        </section>
+    </main>
+
+
+    <script src="/scripts/dashboasrEmpleado.js"></script>
+</body>
+</html>

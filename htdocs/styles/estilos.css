@@ -1,0 +1,230 @@
+/* Estilos generales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    color: #333333;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    overflow-x: hidden;
+}
+
+.logobtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+}
+
+.logobtn h1 {
+    color: #10b981;
+    font-size: 2rem;
+    text-align: center;
+}
+
+.logo {
+    margin-bottom: 1rem;
+    display: flex;
+    position: fixed;
+    top: 2%;
+    left: 2%;
+    align-items: center;
+    gap: 0.5rem;
+    flex-direction: column;
+}
+
+.logo h1 {
+    color: #007bff;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.login-container {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 400px;
+    transform: scale(0.9);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.login-container.active {
+    transform: scale(1);
+    opacity: 1;
+}
+
+h2 {
+    margin-bottom: 1.5rem;
+    color: #007bff;
+    text-align: center;
+    font-size: 1.8rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+    color: #495057;
+}
+
+input[type="text"], input[type="password"] {
+    padding: 0.75rem;
+    margin-bottom: 1.2rem;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+input[type="text"]:focus, input[type="password"]:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.ingreso-button {
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 0.5rem;
+}
+
+.ingreso-button:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+}
+
+.error-message {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    text-align: center;
+    padding: 0.75rem;
+    background: #f8d7da;
+    border-radius: 6px;
+    border: 1px solid #f5c6cb;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+    animation: shake 0.5s ease-in-out;
+}
+
+.login-btn {
+    margin-top: 1rem;
+    padding: 1.5rem 2rem;
+    background: #ffffff;
+    border: 2px solid #10b981;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+}
+
+.login-btn:hover {
+    background: #10b981;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+}
+
+.login-btn:hover h1 {
+    color: white;
+}
+
+.login-btn:hover svg {
+    fill: white;
+}
+
+.common-link {
+    margin-top: 2rem;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease 0.3s;
+}
+
+.common-link.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.common-link a {
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.common-link a:hover {
+    color: #007bff;
+    background: rgba(0, 123, 255, 0.1);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 500px) {
+    .login-container {
+        padding: 1.5rem;
+    }
+    
+    .logo h1 {
+        font-size: 1.7rem;
+    }
+}

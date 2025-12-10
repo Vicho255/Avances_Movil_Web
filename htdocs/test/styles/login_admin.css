@@ -1,0 +1,166 @@
+* {
+    margin: 0%;
+    padding: 0%;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1a1a2e;
+    color: #e6e6e6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+    line-height: 1.6;
+}
+
+.card {
+    background-color: #2d3047;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+    border: 1px solid #3a3d5c;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+#login-title {
+    color: #4a9de3;
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+header p {
+    color: #a0a0a0;
+    font-size: 0.95rem;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.form-row {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #c9c9c9;
+}
+
+input[type="text"],
+input[type="password"] {
+    padding: 0.8rem 1rem;
+    border: 1px solid #3a3d5c;
+    border-radius: 6px;
+    background-color: #25283d;
+    color: #e6e6e6;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+imput[type="text"]:focus,
+imput[type="password"]:focus {
+    outline: none;
+    border-color: #4a9de3;
+    box-shadow: 0 0 0 2px rgba(74, 157, 227, 0.2);
+}
+
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+button[type="submit"] {
+    background-color: #4a9de3;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #357abd;
+}
+
+a {
+    color: #4a9de3;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: #6bb5f0;
+    text-decoration: underline;
+}
+
+.form-row:last-child {
+    margin-top: 0.5rem;
+}
+
+label[for="remember"] {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    gap: 0.5rem;
+    color: #a0a0a0;
+    cursor: pointer;
+}
+
+imput[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #4a9de3;
+    cursor: pointer;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1.5rem;
+    }
+
+    .actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+
+    button[type="submit"] {
+        width: 100%;
+    }
+
+    a {
+        text-align: center;
+    }
+}

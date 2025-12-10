@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/gestionVehiculos.css">
+    <title>Gestion de Vehiculos - MiAutomotriz</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-car-side"></i>
+                <h2>MiAutomotriz</h2>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">Admin Principal</span>
+                    <span class="user-role">Administrador</span>
+                </div>
+            </div>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li class="menu-item">
+                <a href="dashboardAdmin.html">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="clientes.html">
+                    <i class="fas fa-users"></i>
+                    <span>Clientes</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="gestionEmpleados.html">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Empleados</span>
+                </a>
+            </li>
+            <li class="menu-item active">
+                <a href="">
+                    <i class="fas fa-car"></i>
+                    <span>Vehículos</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-tools"></i>
+                    <span>Servicios</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Facturación</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Reportes</span>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="#">
+                    <i class="fas fa-cog"></i>
+                    <span>Configuración</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <a href="login.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </nav>
+
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="top-header">
+            <div class="header-left">
+                <h1>Gestión de Vehiculos</h1>
+            </div>
+            <div class="header-right">
+                <div class="header-actions">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                </div>
+                <div class="current-time">
+                    <span id="currentDateTime"></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="management-container">
+            <!-- Form Section -->
+            <section class="form-section">
+                <div class="form-card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-user-plus"></i>
+                            Nuevo Vehiculo
+                        </h2>
+                    </div>
+                    <form id="vehiculoForm" class="car-form">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="patente">Patente *</label>
+                                <input type="text" id="patente" name="patente" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="marca">Marca</label>
+                                <input type="text" id="marca" name="marca" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="modelo">Modelo</label>
+                                <input type="text" id="modelo" name="modelo" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="tipo">Tipo de Vehiculo</label>
+                                <input type="text" id="tipo" name="tipo" required>
+                            </div>
+
+                            <div class="form-group full-width">
+                                <label for="anno">Año</label>
+                                <input type="number" id="anno" name="anno" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="btnLimpiar">
+                                <i class="fas fa-broom"></i>
+                                Limpiar
+                            </button>
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i>
+                                Guardar Vehiculo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- List Section -->
+            <section class="list-section">
+                <div class="list-card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-list"></i>
+                            Lista de Vehiculos Registrados
+                        </h2>
+                        <div class="list-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchvehiculo" placeholder="Buscar vehiculos...">
+                            </div>
+                            <button class="btn-export">
+                                <i class="fas fa-download"></i>
+                                Exportar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="cars-table">
+                            <thead>
+                                <tr>
+                                    <th>Patente</th>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Tipo</th>
+                                    <th>Año</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="carsTableBody">
+                                <!-- Los vehiculos se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <div class="table-info">
+                            Mostrando <span id="carsCount">0</span> vehiculos
+                        </div>
+                        <div class="pagination">
+                            <button class="pagination-btn" disabled>
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span class="pagination-info">Página 1 de 1</span>
+                            <button class="pagination-btn">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Empty Section for future use -->
+            <section class="">
+                <div class="empty-card">
+                    <!-- Espacio reservado para futuras funcionalidades -->
+            </section>
+        </div>
+    </main>
+
+    <script src="/scripts/gestionVehiculos.js" defer></script>
+</body>
+</html>
