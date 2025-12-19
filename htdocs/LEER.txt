@@ -1,3 +1,0 @@
-IMPORTANTE.
-
-Los Sript en JS, Están para la generación de las listas, gráficos y Cambios de estado en algunos casos
