@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Clientes - MiAutomotriz</title>
-    <link rel="stylesheet" href="/styles/gestion-clientes.css">
+    <link rel="stylesheet" href="styles/gestion-clientes.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -46,7 +46,7 @@
                 </a>
             </li>
             <li class="menu-item">
-                <a href="#">
+                <a href="/gestionVehiculos.html">
                     <i class="fas fa-car"></i>
                     <span>Vehículos</span>
                 </a>
@@ -205,13 +205,15 @@
                         <div class="table-info">
                             Mostrando <span id="clientCount">0</span> clientes
                         </div>
-                        <div class="pagination">
-                            <button class="pagination-btn" disabled>
-                                <i class="fas fa-chevron-left"></i>
+                        <div class="pagination" role="navigation" aria-label="Paginación de clientes">
+                            <button class="pagination-btn" disabled aria-label="Página anterior" aria-disabled="true">
+                                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                                <span class="sr-only">Página anterior</span>
                             </button>
-                            <span class="pagination-info">Página 1 de 1</span>
-                            <button class="pagination-btn">
-                                <i class="fas fa-chevron-right"></i>
+                            <span class="pagination-info" aria-live="polite">Página 1 de 1</span>
+                            <button class="pagination-btn" aria-label="Página siguiente">
+                                <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                                <span class="sr-only">Página siguiente</span>
                             </button>
                         </div>
                     </div>
@@ -258,7 +260,6 @@
             </form>
         </div>
     </div>
-
-    <script src="/scripts/gestion-clientes.js"></script>
+    <script src="scripts/gestionClientes.js"></script>
 </body>
 </html>
