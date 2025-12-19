@@ -1,0 +1,407 @@
+-- =====================================================================
+-- Limpieza de la Base de Datos
+-- Elimina todas las tablas si ya existen para una nueva creación.
+-- =====================================================================
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    EXECUTE 'SET session_replication_role = replica';
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS public.' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+    EXECUTE 'SET session_replication_role = origin';
+END $$;
+
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+DROP TABLE IF EXISTS VIN
+-- =====================================================================
+-- Tablas de Entidades Principales
+-- =====================================================================
+
+-- Tabla para almacenar direcciones
+CREATE TABLE Direccion (
+    codigo_postal VARCHAR(10) PRIMARY KEY,
+    Region VARCHAR(50) NOT NULL,
+    Ciudad VARCHAR(50) NOT NULL,
+    Calle VARCHAR(100) NOT NULL,
+    Numero INT,
+    CHECK (Numero > 0)
+);
+
+-- Tabla para las compañías aseguradoras
+CREATE TABLE Aseguradora (
+    ID VARCHAR(20) PRIMARY KEY,
+    Nombre_Empresa VARCHAR(50) NOT NULL,
+    Nombre_Contacto VARCHAR(100)
+);
+
+CREATE TABLE Telefono_Contacto (
+	Telefono VARCHAR(15) PRIMARY KEY,
+	Aseguradora_ID VARCHAR(20),
+	FOREIGN KEY (Aseguradora_ID) REFERENCES Aseguradora(ID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Correo_Contacto (
+	Correo VARCHAR(50), -- Aumentado el tamaño para correos más largos
+	Terminacion VARCHAR(20), -- Aumentado el tamaño
+	Aseguradora_ID VARCHAR(20),
+	PRIMARY KEY (Correo, Terminacion),
+	FOREIGN KEY (Aseguradora_ID) REFERENCES Aseguradora(ID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TYPE Tipo_enum AS ENUM ('Cliente', 'Empleado', 'Administrador');
+
+-- Tabla de Clientes
+CREATE TABLE Persona (
+    RUT VARCHAR(12) PRIMARY KEY,
+    Nombre VARCHAR(50) NOT NULL,
+    Apellido VARCHAR(50) NOT NULL,
+    Tipo_Persona Tipo_enum NOT NULL,
+    Fecha_Nac DATE,
+    Direccion_codigo_postal VARCHAR(10),
+    Aseguradora_ID VARCHAR(20) DEFAULT 'Sin Aseguradora',
+    Fecha_Registro DATE DEFAULT CURRENT_DATE,
+    FOREIGN KEY (Direccion_codigo_postal) REFERENCES Direccion(codigo_postal) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Aseguradora_ID) REFERENCES Aseguradora(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (Fecha_Nac < CURRENT_DATE)
+);
+
+CREATE TABLE Telefono_Persona (
+	Telefono VARCHAR(15) PRIMARY KEY,
+	Persona_ID VARCHAR(12), -- CORREGIDO: Ajustado a la longitud de RUT
+	FOREIGN KEY (Persona_ID) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Correo_Persona (
+	Correo VARCHAR(50), -- Aumentado el tamaño
+	Terminacion VARCHAR(20), -- Aumentado el tamaño
+	Persona_ID VARCHAR(12), -- CORREGIDO: Ajustado a la longitud de RUT
+	PRIMARY KEY (Correo, Terminacion),
+	FOREIGN KEY (Persona_ID) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Tabla para las marcas de vehículos
+CREATE TABLE Marca (
+    Codigo SERIAL PRIMARY KEY,
+    Nombre VARCHAR(40) UNIQUE NOT NULL
+);
+
+-- Tabla para los modelos de vehículos, asociados a una marca
+CREATE TABLE Modelo (
+    Codigo SERIAL PRIMARY KEY,
+    Nombre VARCHAR(40) NOT NULL,
+    Marca_ID INT,
+    FOREIGN KEY (Marca_ID) REFERENCES Marca(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Tabla para los tipos de vehículo (ej: Sedán, SUV, Camioneta)
+CREATE TABLE Tipo_Vehiculo (
+    Codigo SERIAL PRIMARY KEY,
+    Nombre VARCHAR(40) UNIQUE NOT NULL
+);
+
+-- Tabla de Vehículos
+CREATE TABLE Vehiculo (
+    Patente VARCHAR(7) PRIMARY KEY,
+    Color VARCHAR(30),
+    Motor VARCHAR(50),
+    Pais_origen VARCHAR(50),
+    Persona_RUT VARCHAR(12),
+    FOREIGN KEY (Persona_RUT) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE VIN (
+	VIN VARCHAR(17) PRIMARY KEY,
+	Transmicion VARCHAR(15), -- Aumentado tamaño para 'Automática', etc.
+	Cilindraje VARCHAR(10),
+	Anio INTEGER,
+	Vehiculo_ID VARCHAR(7) UNIQUE, -- Un VIN por vehículo
+	FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (LENGTH(VIN) = 17), -- AÑADIDO: Validación de formato VIN
+    CHECK (Anio >= 1886 AND Anio <= EXTRACT(YEAR FROM CURRENT_DATE))
+);
+
+CREATE TABLE Tener (
+	Vehiculo_ID VARCHAR(7) PRIMARY KEY,
+	Tipo_Vehiculo_ID INT, -- CORREGIDO: Tipo de dato ajustado a SERIAL
+	Modelo_ID INT, -- CORREGIDO: Tipo de dato ajustado a SERIAL
+	FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Tipo_Vehiculo_ID) REFERENCES Tipo_Vehiculo(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Modelo_ID) REFERENCES Modelo(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TYPE Estado_enum AS ENUM ('Pendiente', 'En Proceso', 'Completada', 'Cancelada');
+
+-- Tabla de Órdenes de Trabajo
+CREATE TABLE Orden_Trabajo (
+    Numero SERIAL PRIMARY KEY,
+    Fecha DATE DEFAULT CURRENT_DATE,
+	Descripcion VARCHAR(255),
+    Vehiculo_ID VARCHAR(7) NOT NULL,
+    Estado Estado_enum DEFAULT 'Pendiente',
+    FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Tablas de relación para Orden de Trabajo
+CREATE TABLE Trabajar (
+	Persona_ID VARCHAR(12),
+	Orden_Trabajo_ID INT PRIMARY KEY,
+	FOREIGN KEY (Persona_ID) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Orden_Trabajo_ID) REFERENCES Orden_Trabajo(Numero) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Mano_de_Obra (
+    Codigo SERIAL PRIMARY KEY,
+    Descripcion VARCHAR(100),
+    Costo INT,
+    CHECK (Costo >= 0)
+);
+
+CREATE TABLE Trabajar_2 (
+	Mano_de_Obra_ID INT,
+	Orden_Trabajo_ID INT,
+	PRIMARY KEY (Mano_de_Obra_ID, Orden_Trabajo_ID),
+	FOREIGN KEY (Mano_de_Obra_ID) REFERENCES Mano_de_Obra(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Orden_Trabajo_ID) REFERENCES Orden_Trabajo(Numero) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Tabla de Facturas
+CREATE TABLE Factura (
+    Numero SERIAL PRIMARY KEY,
+    Total INT NOT NULL,
+    Neto INT NOT NULL,
+    IVA INT NOT NULL,
+    Metodo_Pago VARCHAR(40),
+    Detalle_Prestacion_Servicio TEXT,
+    Fecha_Emision DATE DEFAULT CURRENT_DATE,
+    Aseguradora_ID VARCHAR(20),
+    Orden_Trabajo_Numero INT UNIQUE, -- Una factura por orden de trabajo
+    FOREIGN KEY (Aseguradora_ID) REFERENCES Aseguradora(ID) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Orden_Trabajo_Numero) REFERENCES Orden_Trabajo(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- AÑADIDO: Validación de consistencia de montos
+    CHECK (Total = Neto + IVA AND Total >= 0 AND Neto >= 0 AND IVA >= 0)
+);
+
+-- Tabla de Cotizaciones
+CREATE TABLE Cotizacion (
+    Numero SERIAL PRIMARY KEY,
+    Fecha_Emision DATE DEFAULT CURRENT_DATE,
+    Fecha_Fin DATE,
+    Descripcion TEXT,
+    Persona_RUT VARCHAR(12),
+	Factura_ID INT UNIQUE, -- Una cotización genera una única factura
+    FOREIGN KEY (Persona_RUT) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Factura_ID) REFERENCES Factura(Numero) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+-- =====================================================================
+-- Tablas de Inventario y Piezas
+-- =====================================================================
+
+CREATE TABLE Inventario (
+    Codigo SERIAL PRIMARY KEY,
+    Espacio VARCHAR(50)
+);
+
+CREATE TABLE Pieza (
+    Codigo VARCHAR(40) PRIMARY KEY,
+    Nombre VARCHAR(50) NOT NULL,
+    Categoria VARCHAR(50),
+    Descripcion TEXT,
+    Numero_pieza VARCHAR(50),
+	Cantidad INT,
+	Costo INT,
+    Inventario_ID INT,
+    FOREIGN KEY (Inventario_ID) REFERENCES Inventario(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- AÑADIDO: Validación de existencias y costo
+    CHECK (Cantidad >= 0 AND Costo >= 0)
+);
+
+-- MEJORADO: Tabla de relación para piezas en una cotización
+CREATE TABLE Cotizacion_Pieza (
+    Cotizacion_ID INT,
+    Pieza_Codigo VARCHAR(40),
+    Cantidad INT NOT NULL,
+    Costo_Unitario INT NOT NULL,
+    PRIMARY KEY (Cotizacion_ID, Pieza_Codigo),
+    FOREIGN KEY (Cotizacion_ID) REFERENCES Cotizacion(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Pieza_Codigo) REFERENCES Pieza(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (Cantidad > 0 AND Costo_Unitario >= 0)
+);
+
+CREATE TABLE Pieza_Externa (
+    Codigo SERIAL,
+    Nombre VARCHAR(50) NOT NULL,
+    Categoria VARCHAR(50),
+    Valor INT,
+    Costo INT,
+	Cotizacion_ID INT NOT NULL,
+	PRIMARY KEY (Codigo, Cotizacion_ID),
+	FOREIGN KEY (Cotizacion_ID) REFERENCES Cotizacion(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    -- AÑADIDO: Validación de costo y valor
+    CHECK (Valor >= Costo AND Costo >= 0)
+);
+
+-- =====================================================================
+-- Tablas de Catálogo
+-- =====================================================================
+CREATE TABLE Tipo_Combustible (
+    Codigo SERIAL PRIMARY KEY,
+    Nombre VARCHAR(20) UNIQUE NOT NULL,
+    Octanaje INT,
+    CHECK (Octanaje > 0)
+);
+
+CREATE TABLE Componente ( Codigo SERIAL PRIMARY KEY, Nombre VARCHAR(50) UNIQUE NOT NULL );
+CREATE TABLE Lugar ( Codigo SERIAL PRIMARY KEY, Nombre VARCHAR(40) UNIQUE NOT NULL );
+CREATE TABLE Sub_Lugar ( 
+    Codigo SERIAL PRIMARY KEY, 
+    Nombre VARCHAR(40) UNIQUE NOT NULL,
+    Lugar_ID INT,
+    FOREIGN KEY (Lugar_ID) REFERENCES Lugar(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+    );
+CREATE TABLE Daño ( Codigo SERIAL PRIMARY KEY, Nombre VARCHAR(50) UNIQUE NOT NULL );
+CREATE TABLE Averia ( Codigo SERIAL PRIMARY KEY, Nombre VARCHAR(50) UNIQUE NOT NULL );
+
+-- =====================================================================
+-- Tablas de Relación (Muchos a Muchos)
+-- =====================================================================
+CREATE TABLE Incluir (
+	Vehiculo_ID VARCHAR(7), Componente_ID INT, PRIMARY KEY (Vehiculo_ID, Componente_ID),
+	FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Componente_ID) REFERENCES Componente(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE Encontrar (
+	Vehiculo_ID VARCHAR(7), Averia_ID INT, PRIMARY KEY (Vehiculo_ID, Averia_ID),
+	FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (Averia_ID) REFERENCES Averia(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE Usar (
+    Vehiculo_Patente VARCHAR(7), Tipo_Combustible_ID INT, PRIMARY KEY (Vehiculo_Patente, Tipo_Combustible_ID),
+    FOREIGN KEY (Vehiculo_Patente) REFERENCES Vehiculo(Patente) ON DELETE CASCADE,
+    FOREIGN KEY (Tipo_Combustible_ID) REFERENCES Tipo_Combustible(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE Contener (
+    Vehiculo_Patente VARCHAR(7), Lugar_ID INT, PRIMARY KEY (Vehiculo_Patente, Lugar_ID),
+    FOREIGN KEY (Vehiculo_Patente) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Lugar_ID) REFERENCES Lugar(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Ubicar_Daño (
+    Sub_Lugar_ID INT, Daño_ID INT, PRIMARY KEY (Sub_Lugar_ID, Daño_ID),
+    FOREIGN KEY (Sub_Lugar_ID) REFERENCES Sub_Lugar(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Daño_ID) REFERENCES Daño(Codigo)
+);
+
+CREATE TABLE Figurar (
+    Cotizacion_ID INT, Mano_de_Obra_ID INT, Costo_Mano_Obra INT,
+    PRIMARY KEY (Cotizacion_ID, Mano_de_Obra_ID),
+    FOREIGN KEY (Cotizacion_ID) REFERENCES Cotizacion(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Mano_de_Obra_ID) REFERENCES Mano_de_Obra(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (Costo_Mano_Obra >= 0)
+);
+CREATE TABLE Figurar_Daño (
+    Cotizacion_Numero INT, Daño_ID INT, PRIMARY KEY (Cotizacion_Numero, Daño_ID),
+    FOREIGN KEY (Cotizacion_Numero) REFERENCES Cotizacion(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Daño_ID) REFERENCES Daño(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE Orden_Averia (
+    Orden_Trabajo_Numero INT,
+    Averia_ID INT,
+    PRIMARY KEY (Orden_Trabajo_Numero, Averia_ID),
+    FOREIGN KEY (Orden_Trabajo_Numero) REFERENCES Orden_Trabajo(Numero) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Averia_ID) REFERENCES Averia(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE TABLE Ser_Pieza (
+    Modelo_ID INT, Pieza_Codigo VARCHAR(40), PRIMARY KEY (Modelo_ID, Pieza_Codigo),
+    FOREIGN KEY (Modelo_ID) REFERENCES Modelo(Codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (Pieza_Codigo) REFERENCES Pieza(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Almacena los datos de actualizacion delm precio de los repuestos
+CREATE TABLE Historial_Precios (
+    id SERIAL PRIMARY KEY,
+    Repuesto_Codigo VARCHAR(5) NOT NULL REFERENCES Pieza(codigo),
+    Costo_Anterior NUMERIC(12,2),
+    Costo_Nuevo NUMERIC(12,2),
+    Fecha_Cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para el historial de repuestos instalados en vehículos
+CREATE TABLE Historial_Repuestos_Vehiculo (
+    ID SERIAL PRIMARY KEY,
+    Repuesto_Codigo VARCHAR(40) NOT NULL,
+    Vehiculo_Patente VARCHAR(7) NOT NULL,
+    Fecha_Instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Orden_Trabajo_Numero INT,
+    Cantidad_Instalada INT NOT NULL DEFAULT 1,
+    Costo_Unitario INT NOT NULL,
+    FOREIGN KEY (Repuesto_Codigo) REFERENCES Pieza(Codigo) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (Vehiculo_Patente) REFERENCES Vehiculo(Patente) ON DELETE RESTRICT ON UPDATE CASCADE,
+    FOREIGN KEY (Orden_Trabajo_Numero) REFERENCES Orden_Trabajo(Numero) ON DELETE SET NULL ON UPDATE CASCADE,
+    CHECK (Cantidad_Instalada > 0 AND Costo_Unitario >= 0)
+);
+
+CREATE TABLE Turnos_empleado (
+    ID SERIAL PRIMARY KEY,
+    Empleado_RUT VARCHAR(12) NOT NULL,
+    Fecha DATE NOT NULL,
+    Hora_Inicio TIME NOT NULL,
+    Hora_Fin TIME NOT NULL,
+    FOREIGN KEY (Empleado_RUT) REFERENCES Persona(RUT) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (Hora_Fin > Hora_Inicio)
+);
+
+SELECT current_database();
+SELECT current_user;
+
+
+INSERT INTO aseguradora (ID, Nombre_Empresa, Nombre_Contacto) VALUES
+('A001', 'Seguros VidaPlus', 'Carlos Ramirez'),
+('A002', 'Proteccion Total', 'Ana Gomez'),
+('A003', 'Cobertura Maxima', 'Luis Fernandez');
+
+INSERT INTO direccion (codigo_postal, Region, Ciudad, Calle, Numero) VALUES
+('1001', 'Metropolitana', 'Santiago', 'Av. Libertador Bernardo O Higgins', 1234),
+('2002', 'Valparaiso', 'Valparaiso', 'Calle Condell', 567),
+('3003', 'Biobio', 'Concepcion', 'Calle O Higgins', 890);
+
+INSERT INTO persona (RUT, Nombre, Apellido, Tipo_Persona, Fecha_Nac, Direccion_codigo_postal, Aseguradora_ID) VALUES
+('12345678-9', 'Juan', 'Perez', 'Cliente', '1985-06-15', '1001', 'A001'),
+('98765432-1', 'Maria', 'Lopez', 'Empleado', '1990-09-20', '2002', 'A002'),
+('11223344-5', 'Carlos', 'Sanchez', 'Administrador', '1978-12-05', '3003', 'A003');
+
+INSERT INTO marca (Nombre) VALUES
+('Toyota'),
+('Ford'),
+('Chevrolet');
+
+INSERT INTO modelo (Nombre, Marca_ID) VALUES
+('Corolla', 1),
+('Mustang', 2),
+('Camaro', 3);
+
+INSERT INTO tipo_vehiculo (Nombre) VALUES
+('Sedán'),
+('SUV'),
+('Camioneta');
+
+INSERT INTO vehiculo (Patente, Color, Motor, Pais_origen, Persona_RUT) VALUES
+('ABCD12', 'Rojo', '1.8L', 'Chile', '12345678-9'),
+('EFGH34', 'Azul', '2.0L', 'USA', '98765432-1'),
+('IJKL56', 'Negro', '3.0L', 'Argentina', '11223344-5');
+
+INSERT INTO vin (VIN, transmicion, cilindraje, anio, vehiculo_id) VALUES
+('5YFS4MCE8MLDH26MN', 'Automática', '1.8L', 2020, 'ABCD12'),
+('1FAHP2MH4KNDJAH89', 'Manual', '2.0L', 2019, 'EFGH34'),
+('1G1FB1RS2MNHAP09B', 'Automática', '3.0L', 2021, 'IJKL56');
+
+INSERT INTO tener (Vehiculo_ID, tipo_vehiculo_id, Modelo_ID) VALUES
+('ABCD12', 1, 1),
+('EFGH34', 2, 2),
+('IJKL56', 3, 3);
+

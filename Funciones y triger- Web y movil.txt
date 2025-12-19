@@ -1,0 +1,237 @@
+-- Informacion para Graficos
+
+CREATE OR REPLACE FUNCTION Clientes_registrados_mes()
+RETURNS TABLE(mes VARCHAR, total_clientes INT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT TO_CHAR(Fecha_Registro, 'Month') AS mes, COUNT(*) AS total_clientes
+    FROM Persona
+    WHERE Tipo_Persona = 'Cliente'
+    GROUP BY mes
+    ORDER BY DATE_PART('month', TO_DATE(mes, 'Month'));
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Ordenes_trabajo_mes()
+RETURNS TABLE(mes VARCHAR, total_ordenes INT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT TO_CHAR(Fecha, 'Month') AS mes, COUNT(*) AS total_ordenes
+    FROM Orden_Trabajo
+    GROUP BY mes
+    ORDER BY DATE_PART('month', TO_DATE(mes, 'Month'));
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Ingresos_mes()
+RETURNS TABLE(mes VARCHAR, total_ingresos NUMERIC) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT TO_CHAR(Fecha, 'Month') AS mes, SUM(Total) AS total_ingresos
+    FROM Factura
+    GROUP BY mes
+    ORDER BY DATE_PART('month', TO_DATE(mes, 'Month'));
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Repuestos_mas_usados()
+RETURNS TABLE(repuesto_nombre VARCHAR, total_usos INT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT R.Nombre AS repuesto_nombre, COUNT(*) AS total_usos
+    FROM Repuesto_Usado RU
+    JOIN Repuesto R ON RU.Repuesto_ID = R.Repuesto_ID
+    GROUP BY R.Nombre
+    ORDER BY total_usos DESC
+    LIMIT 5;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION AVerias_mas_comunes()
+RETURNS TABLE(averia_descripcion VARCHAR, total_casos INT) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT A.Descripcion AS averia_descripcion, COUNT(*) AS total_casos
+    FROM Averia A
+    JOIN Orden_Trabajo_OT_Averia OTA ON A.Averia_ID = OTA.Averia_ID
+    GROUP BY A.Descripcion
+    ORDER BY total_casos DESC
+    LIMIT 5;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Filtrar_clientes ()
+RETURNS TABLE(
+    Persona_ID INT,
+    Nombre VARCHAR,
+    Apellido VARCHAR,
+    Correo_Electronico VARCHAR,
+    Telefono VARCHAR,
+    Direccion VARCHAR,
+    Fecha_Registro DATE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Persona_ID, Nombre, Apellido, Correo_Electronico, Telefono, Direccion, Fecha_Registro
+    FROM Persona
+    WHERE Tipo_Persona = 'Cliente';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Filtrar_Empleados ()
+RETURNS TABLE(
+    Persona_ID INT,
+    Nombre VARCHAR,
+    Apellido VARCHAR,
+    Correo_Electronico VARCHAR,
+    Telefono VARCHAR,
+    Direccion VARCHAR,
+    Fecha_Registro DATE
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Persona_ID, Nombre, Apellido, Correo_Electronico, Telefono, Direccion, Fecha_Registro
+    FROM Persona
+    WHERE Tipo_Persona = 'Empleado';
+END;
+$$ LANGUAGE plpgsql;
+
+CREWATE OR REPLACE FUNCTION Filtrar_Vehiculos ()
+RETURNS TABLE(
+    Patente VARCHAR,
+    Marca VARCHAR,
+    Modelo VARCHAR,
+    Año INT,
+    Color VARCHAR,
+    Cliente_ID INT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Patente, Marca, Modelo, Año, Color, Cliente_ID
+    FROM Vehiculo;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Filtrar_Ordenes_Trabajo (estado_filter VARCHAR)
+RETURNS TABLE(
+    Numero INT,
+    Fecha DATE,
+    Estado VARCHAR,
+    Vehiculo_ID VARCHAR,
+    Empleado_ID INT,
+    Total NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Numero, Fecha, Estado, Vehiculo_ID, Empleado_ID, Total
+    FROM Orden_Trabajo;
+    WHERE Estado = estado_filter;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Filtrar_Facturas ()
+RETURNS TABLE(
+    Factura_ID INT,
+    Fecha DATE,
+    Monto_Total NUMERIC,
+    Cliente_ID INT,
+    Orden_Trabajo_ID INT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Factura_ID, Fecha, Monto_Total, Cliente_ID, Orden_Trabajo_ID
+    FROM Factura;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Funnciones Empleado
+
+CREATE OR REPLACE FUNCTION Contar_Ordenes_Empleado(empleado_id VARCHAR, orden_estado VARCHAR DEFAULT NULL)
+RETURNS INT AS $$
+DECLARE
+    ordenes_count INT;
+BEGIN
+    SELECT COUNT(*) INTO ordenes_count
+    FROM Orden_Trabajo
+    WHERE Empleado_ID = empleado_id AND Estado = orden_estado;
+    RETURN ordenes_count;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION Inventario_Repuestos_Disponibles()
+RETURNS TABLE(
+    Repuesto_ID INT,
+    Nombre VARCHAR,
+    Cantidad_Disponible INT,
+    Precio_Unitario NUMERIC
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT Repuesto_ID, Nombre, Cantidad_Disponible, Precio_Unitario
+    FROM Repuesto
+    WHERE Cantidad_Disponible > 0;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers
+CREATE OR REPLACE FUNCTION Actualizar_Inventario_Repuesto()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE Repuesto
+        SET Cantidad_Disponible = Cantidad_Disponible - NEW.Cantidad_Instalada
+        WHERE Repuesto_ID = NEW.Repuesto_ID;
+    ELSIF TG_OP = 'DELETE' THEN
+        UPDATE Repuesto
+        SET Cantidad_Disponible = Cantidad_Disponible + OLD.Cantidad_Instalada
+        WHERE Repuesto_ID = OLD.Repuesto_ID;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER Trigger_Actualizar_Inventario_Repuesto
+AFTER INSERT OR DELETE ON Repuesto_Usado
+FOR EACH ROW
+EXECUTE FUNCTION Actualizar_Inventario_Repuesto();
+
+CREATE OR REPLACE FUNCTION Actualizar_Estado_Orden_Trabajo()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.Estado = 'Completada' THEN
+        UPDATE Orden_Trabajo
+        SET Fecha_Completion = CURRENT_DATE
+        WHERE Numero = NEW.Numero;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER Trigger_Actualizar_Estado_Orden_Trabajo
+AFTER UPDATE OF Estado ON Orden_Trabajo
+FOR EACH ROW
+EXECUTE FUNCTION Actualizar_Estado_Orden_Trabajo();
+
+DROP FUNCTION IF EXISTS validacion_credenciales(VARCHAR, VARCHAR);
+-- Esta función debe existir en tu base de datos
+CREATE OR REPLACE FUNCTION validacion_credenciales(
+    p_usuario VARCHAR,      -- Nombre completo
+    p_contrasena VARCHAR    -- RUT completo con DV
+)
+RETURNS TABLE (
+    RUT VARCHAR,
+    Nombre VARCHAR,
+    Tipo_Persona VARCHAR
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.RUT,
+        p.Nombre,
+        p.Tipo_Persona::VARCHAR
+    FROM Persona p
+    WHERE CONCAT(p.Nombre, ' ', p.Apellido) = p_usuario
+    AND p.RUT = p_contrasena
+    AND p.Tipo_Persona IN ('Administrador', 'Empleado');
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM validacion_credenciales('Carlos Sanchez', '11223344-5');
