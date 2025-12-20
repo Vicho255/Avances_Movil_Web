@@ -1,0 +1,524 @@
+/* layout.css - Estilos comunes para admin y empleado */
+
+/* Variables CSS para modo claro (por defecto) */
+:root {
+    /* Colores primarios */
+    --primary-color: #444ca5;  /* Admin - Azul */
+    --primary-light: #5c63b6;
+    --primary-dark: #363c84;
+    --secondary-color: #10b981; /* Empleado - Verde */
+    
+    /* Texto */
+    --text-primary: #374151;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    
+    /* Fondos */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #f3f4f6;
+    
+    /* Bordes */
+    --border-color: #e5e7eb;
+    --border-light: #f3f4f6;
+    
+    /* Estados */
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #3b82f6;
+    --urgent-color: #dc2626;
+    
+    /* Sombras */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    /* Transición */
+    --transition: all 0.3s ease;
+    
+    /* Layout */
+    --sidebar-width: 280px;
+    --header-height: 70px;
+}
+
+/* Variables para modo oscuro */
+[data-theme="dark"] {
+    /* Colores modo oscuro */
+    --primary-color: #6366f1;
+    --primary-light: #818cf8;
+    --primary-dark: #4f46e5;
+    
+    /* Texto modo oscuro */
+    --text-primary: #f3f4f6;
+    --text-secondary: #d1d5db;
+    --text-muted: #9ca3af;
+    
+    /* Fondos modo oscuro */
+    --bg-primary: #1f2937;
+    --bg-secondary: #111827;
+    --bg-tertiary: #374151;
+    
+    /* Bordes modo oscuro */
+    --border-color: #4b5563;
+    --border-light: #374151;
+    
+    /* Estados (más brillantes en oscuro) */
+    --success-color: #34d399;
+    --warning-color: #fbbf24;
+    --error-color: #f87171;
+    --info-color: #60a5fa;
+    --urgent-color: #f87171;
+    
+    /* Sombras más pronunciadas en oscuro */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+/* ============ ESTILOS BASE ============ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+    transition: var(--transition);
+}
+
+/* ============ SIDEBAR COMÚN ============ */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+
+/* Sidebar Header común */
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+/* Admin sidebar header - Azul */
+.admin-sidebar .sidebar-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+/* Empleado sidebar header - Verde */
+.empleado-sidebar .sidebar-header {
+    background: linear-gradient(135deg, #10b981, #34d399);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.logo i {
+    font-size: 2rem;
+    color: white;
+}
+
+.logo h2 {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+    transition: var(--transition);
+}
+
+/* Avatar admin */
+.admin-sidebar .user-avatar {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+/* Avatar empleado */
+.empleado-sidebar .user-avatar {
+    background: linear-gradient(135deg, #10b981, #34d399);
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: white;
+}
+
+.user-role {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.user-rut {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 2px;
+}
+
+/* Sidebar Menu común */
+.sidebar-menu {
+    flex: 1;
+    padding: 1rem 0;
+    list-style: none;
+    background: var(--bg-primary);
+    transition: var(--transition);
+}
+
+.menu-item {
+    margin: 0.25rem 1rem;
+}
+
+.menu-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    transition: var(--transition);
+    background: transparent;
+}
+
+.menu-item a:hover {
+    background-color: rgba(68, 76, 165, 0.1);
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .menu-item a:hover {
+    background-color: rgba(99, 102, 241, 0.2);
+}
+
+/* Color hover específico para empleado */
+.empleado-sidebar .menu-item a:hover {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+[data-theme="dark"] .empleado-sidebar .menu-item a:hover {
+    background-color: rgba(52, 211, 153, 0.2);
+}
+
+.menu-item.active a {
+    color: white;
+}
+
+/* Active admin - Azul */
+.admin-sidebar .menu-item.active a {
+    background-color: var(--primary-color);
+}
+
+/* Active empleado - Verde */
+.empleado-sidebar .menu-item.active a {
+    background-color: #10b981;
+}
+
+/* Sidebar Footer común */
+.sidebar-footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    transition: var(--transition);
+}
+
+.logout-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    color: var(--error-color);
+    border-radius: 8px;
+    transition: var(--transition);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.logout-btn:hover {
+    background-color: var(--error-color);
+    color: white;
+}
+
+/* ============ HEADER COMÚN ============ */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    background: var(--bg-secondary);
+    transition: var(--transition);
+}
+
+.top-header {
+    height: var(--header-height);
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    transition: var(--transition);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.top-header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Elementos específicos del header empleado */
+.empleado-header .shift-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 20px;
+    color: #10b981;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+/* Botones comunes del header */
+.notification-btn, .search-btn, .break-btn, .theme-toggle {
+    background: none;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: var(--transition);
+    position: relative;
+}
+
+/* Botón de notificaciones */
+.notification-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.notification-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Botón de búsqueda (solo admin) */
+.search-btn {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.search-btn:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Botón de descanso (solo empleado) */
+.break-btn {
+    padding: 0.5rem 1rem;
+    background: #10b981;
+    color: white;
+    border: 1px solid #10b981;
+    gap: 0.5rem;
+}
+
+.break-btn.on-break {
+    background: var(--warning-color);
+    border-color: var(--warning-color);
+}
+
+.break-btn:hover {
+    opacity: 0.9;
+}
+
+/* Botón de tema */
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    overflow: hidden;
+}
+
+.theme-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    transform: rotate(30deg);
+}
+
+.theme-toggle i {
+    position: absolute;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.theme-toggle .fa-moon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.theme-toggle .fa-sun {
+    opacity: 0;
+    transform: scale(0);
+}
+
+[data-theme="dark"] .theme-toggle .fa-moon {
+    opacity: 0;
+    transform: scale(0);
+}
+
+[data-theme="dark"] .theme-toggle .fa-sun {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Badge de notificaciones */
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--error-color);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    transform: translate(50%, -50%);
+    box-shadow: 0 0 0 2px var(--bg-primary);
+}
+
+/* Hora actual */
+.current-time {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: var(--transition);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .menu-toggle {
+        display: block;
+    }
+    
+    .top-header {
+        padding: 0 1rem;
+    }
+    
+    .header-right {
+        gap: 1rem;
+    }
+    
+    /* Ocultar elementos en móvil */
+    .shift-info,
+    .search-btn,
+    .current-time:not(.mobile-visible) {
+        display: none;
+    }
+    
+    /* Mostrar hora en móvil si es necesario */
+    .current-time.mobile-visible {
+        display: block;
+        font-size: 0.8rem;
+    }
+}

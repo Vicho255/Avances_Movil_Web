@@ -103,7 +103,7 @@
     font-weight: 600;
 }
 
-.client-form {
+.vehicle-form {
     padding: 1.5rem;
     background: var(--bg-primary);
     transition: var(--transition);

@@ -4,7 +4,7 @@
 .management-container {
     padding: 2rem;
     display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 2fr;
     gap: 2rem;
     max-width: 1400px;
     margin: 0 auto;
@@ -71,135 +71,8 @@
     margin-bottom: 0.25rem;
 }
 
-/* Form Section */
-.form-section {
-    height: fit-content;
-    position: sticky;
-    top: 90px;
-}
-
-.form-card {
-    background: var(--bg-primary);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-    transition: var(--transition);
-}
-
-.form-card .card-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    color: white;
-    transition: var(--transition);
-}
-
-.form-card .card-header h2 {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-}
-
-.client-form {
-    padding: 1.5rem;
-    background: var(--bg-primary);
-    transition: var(--transition);
-}
-
-.form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-.form-group label {
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
-    transition: var(--transition);
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.95rem;
-    transition: var(--transition);
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(68, 76, 165, 0.1);
-}
-
-.form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-    font-family: inherit;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-}
-
-.btn-primary, .btn-secondary {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-}
-
-.btn-primary {
-    background: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-    transform: translateY(-1px);
-}
-
-.btn-secondary {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-    background: var(--border-color);
-}
-
 /* List Section */
-.list-section {
+.employee-management {
     min-height: 600px;
 }
 
@@ -215,7 +88,7 @@
     transition: var(--transition);
 }
 
-.list-card .card-header {
+.list-card .section-header {
     padding: 1.5rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
@@ -225,7 +98,7 @@
     transition: var(--transition);
 }
 
-.list-card .card-header h2 {
+.list-card .section-header h2 {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -296,19 +169,19 @@
 }
 
 /* Table */
-.table-container {
+.employee-table-container {
     flex: 1;
     overflow: auto;
     background: var(--bg-primary);
     transition: var(--transition);
 }
 
-.clients-table {
+.employee-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.clients-table th {
+.employee-table th {
     background: var(--bg-tertiary);
     padding: 1rem;
     text-align: left;
@@ -323,7 +196,7 @@
     transition: var(--transition);
 }
 
-.clients-table td {
+.employee-table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
@@ -331,52 +204,13 @@
     transition: var(--transition);
 }
 
-.clients-table tbody tr {
+.employee-table tbody tr {
     transition: var(--transition);
     background: var(--bg-primary);
 }
 
-.clients-table tbody tr:hover {
+.employee-table tbody tr:hover {
     background: var(--bg-tertiary);
-}
-
-/* Action Buttons */
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-action {
-    width: 32px;
-    height: 32px;
-    border: none;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
-    font-size: 0.8rem;
-}
-
-.btn-edit {
-    background: rgba(59, 130, 246, 0.1);
-    color: var(--info-color);
-}
-
-.btn-delete {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--error-color);
-}
-
-.btn-edit:hover {
-    background: var(--info-color);
-    color: white;
-}
-
-.btn-delete:hover {
-    background: var(--error-color);
-    color: white;
 }
 
 /* Table Footer */
@@ -431,6 +265,21 @@
     font-size: 0.85rem;
     color: var(--text-secondary);
     transition: var(--transition);
+}
+
+.add-employee-btn {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
 }
 
 /* Modal */

@@ -34,8 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     file_put_contents($debug_log, "[" . date('H:i:s') . "] POST recibido\n", FILE_APPEND);
     file_put_contents($debug_log, "[" . date('H:i:s') . "] POST data: " . print_r($_POST, true) . "\n", FILE_APPEND);
     
-    $database = new Database();
-    $conn = $database->getConnection();
+    $conn = getDB();
     
     if (!$conn) {
         $error_1 = "Error de conexión a la base de datos.";

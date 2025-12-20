@@ -18,6 +18,10 @@ if($_SESSION['tipo_persona'] !== 'Administrador'){
 // Obtener datos del usuario de la sesión
 $nombre_usuario = $_SESSION['usuario'] ?? 'Administrador';
 $rut_usuario = $_SESSION['rut'] ?? '';
+
+// Configurar header
+$pageTitle = 'Dashboard Principal';
+$notificationCount = 3; // Puedes calcular esto dinámicamente
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -25,120 +29,18 @@ $rut_usuario = $_SESSION['rut'] ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Administrador - MiAutomotriz</title>
+    <link rel="stylesheet" href="styles/layout.css">
     <link rel="stylesheet" href="styles/dashboardAdmin.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Sidebar Navigation -->
-    <nav class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-car-side"></i>
-                <h2>MiAutomotriz</h2>
-            </div>
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <div class="user-details">
-                    <span class="user-name"><?php echo htmlspecialchars($nombre_usuario); ?></span>
-                    <span class="user-role">Administrador</span>
-                    <small class="user-rut"><?php echo htmlspecialchars($rut_usuario); ?></small>
-                </div>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="menu-item active">
-                <a href="admin_dashboard.php">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="clientes.php">  <!-- Cambiado a .php -->
-                    <i class="fas fa-users"></i>
-                    <span>Clientes</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="gestionEmpleados.php">  <!-- Cambiado a .php -->
-                    <i class="fas fa-user-tie"></i>
-                    <span>Empleados</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="gestionVehiculos.php">  <!-- Cambiado a .php -->
-                    <i class="fas fa-car"></i>
-                    <span>Vehículos</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-tools"></i>
-                    <span>Servicios</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Facturación</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-chart-bar"></i>
-                    <span>Reportes</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-cog"></i>
-                    <span>Configuración</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <!-- IMPORTANTE: Cambiado a logout.php -->
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar Sesión</span>
-            </a>
-        </div>
-    </nav>
+    <?php include 'components/sidebar-admin.php'; ?>
 
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
-        <header class="top-header">
-            <div class="header-left">
-                <button class="menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h1>Dashboard Principal</h1>
-            </div>
-            <div class="header-right">
-                <div class="header-actions">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
-                    </button>
-                    <button class="search-btn">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-                <div class="current-time">
-                    <span id="currentDateTime">
-                        <?php echo date('d/m/Y H:i:s'); ?>
-                    </span>
-                </div>
-                <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
-                    <i class="fas fa-sun"></i>
-                </button>
-            </div>
-        </header>
+        <?php include 'components/header-admin.php'; ?>
         
         <!-- Stats Cards - Ahora con datos dinámicos -->
         <section class="stats-section">
@@ -353,9 +255,23 @@ $rut_usuario = $_SESSION['rut'] ?? '';
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="components/theme-manager.js"></script>
     <script src="scripts/dashboard-admin.js"></script>
     
     <script>
+        // Inicializar funcionalidades específicas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar en móvil
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+        });
+
         // Actualizar hora en tiempo real
         function actualizarHora() {
             const ahora = new Date();
@@ -408,5 +324,6 @@ $rut_usuario = $_SESSION['rut'] ?? '';
                 });
         }, 300000); // Cada 5 minutos
     </script>
+    
 </body>
 </html>

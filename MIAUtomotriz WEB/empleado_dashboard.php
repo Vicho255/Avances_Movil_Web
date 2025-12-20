@@ -23,123 +23,18 @@ $rut_usuario = $_SESSION['rut'] ?? '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Empleado - MiAutomotriz</title>
+    <link rel="stylesheet" href="styles/layout.css">
     <link rel="stylesheet" href="styles/dashoboasrEmpleado.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <!-- Sidebar Navigation -->
-    <nav class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <i class="fas fa-car-side"></i>
-                <h2>MiAutomotriz</h2>
-            </div>
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
-                </div>
-                <div class="user-details">
-                    <span class="user-name"><?php echo htmlspecialchars($nombre_usuario); ?></span>
-                    <span class="user-role">Técnico - Taller</span>
-                    <small class="user-rut"><?php echo htmlspecialchars($rut_usuario); ?></small>
-                </div>
-            </div>
-        </div>
-
-        <ul class="sidebar-menu">
-            <li class="menu-item active">
-                <a href="dashboardEmpleado.php">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Dashboard</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="gestionTareasE.php">
-                    <i class="fas fa-tasks"></i>
-                    <span>Mis Tareas</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="agendaE.php">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>Agenda</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-car"></i>
-                    <span>Vehículos</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Checklists</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-history"></i>
-                    <span>Historial</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-toolbox"></i>
-                    <span>Inventario</span>
-                </a>
-            </li>
-            <li class="menu-item">
-                <a href="#">
-                    <i class="fas fa-file-invoice"></i>
-                    <span>Reportes</span>
-                </a>
-            </li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <a href="logout.php" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Cerrar Sesión</span>
-            </a>
-        </div>
-    </nav>
+    <?php include 'components/sidebar-empleado.php'; ?>
 
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
-        <header class="top-header">
-            <div class="header-left">
-                <button class="menu-toggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h1>Mi Panel de Trabajo</h1>
-            </div>
-            <div class="header-right">
-                <div class="shift-info">
-                    <i class="fas fa-clock"></i>
-                    <span>Turno: 08:00 - 17:00</span>
-                </div>
-                <div class="header-actions">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">5</span>
-                    </button>
-                    <button class="break-btn" id="breakToggle">
-                        <i class="fas fa-coffee"></i>
-                        <span>En Turno</span>
-                    </button>
-
-                </div>
-                <div class="current-time">
-                    <span id="currentDateTime"><?php echo date('d/m/Y H:i:s'); ?></span>
-                </div>
-                    <button class="theme-toggle" id="themeToggle">
-                        <i class="fas fa-moon"></i>
-                        <i class="fas fa-sun"></i>
-                    </button>
-            </div>
-        </header>
+        <?php include 'components/header-empleado.php'; ?>
 
         <!-- Quick Stats -->
         <section class="quick-stats">
@@ -438,6 +333,18 @@ $rut_usuario = $_SESSION['rut'] ?? '';
     <script src="scripts/dashboasrEmpleado.js"></script>
     
     <script>
+        // Inicializar funcionalidades específicas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar en móvil
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+        });
         // Actualizar hora en tiempo real
         function actualizarHora() {
             const ahora = new Date();

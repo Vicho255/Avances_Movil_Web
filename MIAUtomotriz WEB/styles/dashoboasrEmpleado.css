@@ -1,433 +1,4 @@
-/* dashboardEmpleado.css - Con modo oscuro para empleados */
-
-/* Variables CSS para modo claro (por defecto) */
-:root {
-    /* Colores modo claro - Tema Verde para empleados */
-    --primary-color: #10b981;
-    --primary-light: #34d399;
-    --primary-dark: #059669;
-    --secondary-color: #3b82f6;
-    
-    /* Texto modo claro */
-    --text-primary: #374151;
-    --text-secondary: #6b7280;
-    --text-muted: #9ca3af;
-    
-    /* Fondos modo claro */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8f9fa;
-    --bg-tertiary: #f3f4f6;
-    
-    /* Bordes modo claro */
-    --border-color: #e5e7eb;
-    --border-light: #f3f4f6;
-    
-    /* Estados */
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --error-color: #ef4444;
-    --info-color: #3b82f6;
-    --urgent-color: #dc2626;
-    
-    /* Sombras */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    
-    /* Transición */
-    --transition: all 0.3s ease;
-    
-    /* Layout */
-    --sidebar-width: 280px;
-    --header-height: 70px;
-}
-
-/* Variables para modo oscuro */
-[data-theme="dark"] {
-    /* Colores modo oscuro - Tema Verde adaptado */
-    --primary-color: #34d399;
-    --primary-light: #6ee7b7;
-    --primary-dark: #10b981;
-    
-    /* Texto modo oscuro */
-    --text-primary: #f3f4f6;
-    --text-secondary: #d1d5db;
-    --text-muted: #9ca3af;
-    
-    /* Fondos modo oscuro */
-    --bg-primary: #1f2937;
-    --bg-secondary: #111827;
-    --bg-tertiary: #374151;
-    
-    /* Bordes modo oscuro */
-    --border-color: #4b5563;
-    --border-light: #374151;
-    
-    /* Estados (más brillantes en oscuro) */
-    --success-color: #34d399;
-    --warning-color: #fbbf24;
-    --error-color: #f87171;
-    --info-color: #60a5fa;
-    --urgent-color: #f87171;
-    
-    /* Sombras más pronunciadas en oscuro */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-}
-
-/* Estilos base */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: var(--bg-secondary);
-    color: var(--text-primary);
-    line-height: 1.6;
-    display: flex;
-    min-height: 100vh;
-    transition: var(--transition);
-}
-
-/* Botón de toggle modo oscuro */
-.theme-toggle {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.theme-toggle:hover {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-    transform: rotate(30deg);
-}
-
-.theme-toggle i {
-    position: absolute;
-    font-size: 1rem;
-    transition: var(--transition);
-}
-
-.theme-toggle .fa-moon {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.theme-toggle .fa-sun {
-    opacity: 0;
-    transform: scale(0);
-}
-
-[data-theme="dark"] .theme-toggle .fa-moon {
-    opacity: 0;
-    transform: scale(0);
-}
-
-[data-theme="dark"] .theme-toggle .fa-sun {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* Sidebar - Estilo Empleado */
-.sidebar {
-    width: var(--sidebar-width);
-    background: var(--bg-primary);
-    border-right: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    height: 100vh;
-    left: 0;
-    top: 0;
-    z-index: 1000;
-    box-shadow: var(--shadow-md);
-    transition: var(--transition);
-}
-
-.sidebar-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    transition: var(--transition);
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.logo i {
-    font-size: 2rem;
-    color: white;
-}
-
-.logo h2 {
-    color: white;
-    font-size: 1.25rem;
-    font-weight: 700;
-}
-
-.user-info {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.user-avatar {
-    width: 45px;
-    height: 45px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.2rem;
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    transition: var(--transition);
-}
-
-.user-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.user-name {
-    font-weight: 600;
-    color: white;
-}
-
-.user-role {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.user-rut {
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 2px;
-}
-
-/* Resto del sidebar */
-.sidebar-menu {
-    flex: 1;
-    padding: 1rem 0;
-    list-style: none;
-    background: var(--bg-primary);
-    transition: var(--transition);
-}
-
-.menu-item {
-    margin: 0.25rem 1rem;
-}
-
-.menu-item a {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: var(--text-secondary);
-    border-radius: 8px;
-    transition: var(--transition);
-    background: transparent;
-}
-
-.menu-item a:hover {
-    background-color: rgba(16, 185, 129, 0.1);
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .menu-item a:hover {
-    background-color: rgba(52, 211, 153, 0.2);
-}
-
-.menu-item.active a {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.sidebar-footer {
-    padding: 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-primary);
-    transition: var(--transition);
-}
-
-.logout-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem 1rem;
-    text-decoration: none;
-    color: var(--error-color);
-    border-radius: 8px;
-    transition: var(--transition);
-    background: rgba(239, 68, 68, 0.1);
-}
-
-.logout-btn:hover {
-    background-color: var(--error-color);
-    color: white;
-}
-
-/* Main Content */
-.main-content {
-    flex: 1;
-    margin-left: var(--sidebar-width);
-    min-height: 100vh;
-    background: var(--bg-secondary);
-    transition: var(--transition);
-}
-
-/* Header Específico para Empleado */
-.top-header {
-    height: var(--header-height);
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    transition: var(--transition);
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.top-header h1 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.shift-info {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(16, 185, 129, 0.1);
-    border-radius: 20px;
-    color: var(--primary-color);
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.header-actions {
-    display: flex;
-    gap: 0.75rem;
-}
-
-.notification-btn, .break-btn {
-    background: none;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: var(--transition);
-}
-
-.notification-btn {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    border: 1px solid var(--border-color);
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: var(--transition);
-    position: relative; /* AÑADE ESTA LÍNEA */
-}
-
-.break-btn {
-    background: var(--success-color);
-    color: white;
-    border: 1px solid var(--success-color);
-}
-
-.break-btn.on-break {
-    background: var(--warning-color);
-    border-color: var(--warning-color);
-}
-
-.notification-btn:hover {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-.notification-badge {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: var(--error-color);
-    color: white;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    font-size: 0.7rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.current-time {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    transition: var(--transition);
-}
+/* dashboard-empleado.css - Solo estilos específicos del dashboard empleado */
 
 /* Quick Stats */
 .quick-stats {
@@ -457,7 +28,7 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
-.stat-icon {
+.quick-stat-card .stat-icon {
     width: 50px;
     height: 50px;
     border-radius: 10px;
@@ -484,21 +55,19 @@ body {
     background: linear-gradient(135deg, #8b5cf6, #a78bfa);
 }
 
-.stat-content h3 {
+.quick-stat-card .stat-content h3 {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 0.25rem;
-    transition: var(--transition);
 }
 
-.stat-content p {
+.quick-stat-card .stat-content p {
     color: var(--text-secondary);
     font-size: 0.85rem;
-    transition: var(--transition);
 }
 
-/* Content Grid */
+/* Content Grid Empleado */
 .content-grid {
     padding: 1.5rem 2rem 2rem;
     display: grid;
@@ -512,52 +81,11 @@ body {
     box-shadow: var(--shadow-md);
     border: 1px solid var(--border-color);
     overflow: hidden;
-    transition: var(--transition);
-}
-
-.card-header {
-    padding: 1.25rem;
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg-primary);
-    transition: var(--transition);
-}
-
-.card-header h3 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    transition: var(--transition);
-}
-
-.view-all, .metrics-filter {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: var(--transition);
-}
-
-.view-all {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-}
-
-.view-all:hover {
-    background: var(--primary-dark);
 }
 
 /* Tasks List */
 .tasks-list {
     padding: 0.5rem 0;
-    background: var(--bg-primary);
-    transition: var(--transition);
 }
 
 .task-item {
@@ -567,7 +95,6 @@ body {
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-color);
     transition: var(--transition);
-    background: var(--bg-primary);
 }
 
 .task-item:last-child {
@@ -597,7 +124,6 @@ body {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
-    transition: var(--transition);
 }
 
 .task-time {
@@ -606,14 +132,12 @@ body {
     background: var(--bg-tertiary);
     padding: 0.2rem 0.5rem;
     border-radius: 12px;
-    transition: var(--transition);
 }
 
 .task-desc {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin-bottom: 0.75rem;
-    transition: var(--transition);
 }
 
 .task-progress {
@@ -646,7 +170,6 @@ body {
     color: var(--text-secondary);
     font-weight: 600;
     min-width: 30px;
-    transition: var(--transition);
 }
 
 .task-actions {
@@ -682,10 +205,33 @@ body {
 }
 
 /* Schedule */
+.date-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.nav-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary-color);
+}
+
 .schedule-timeline {
     padding: 1rem 0;
-    background: var(--bg-primary);
-    transition: var(--transition);
 }
 
 .time-slot {
@@ -693,8 +239,6 @@ body {
     align-items: flex-start;
     gap: 1rem;
     padding: 0.5rem 1.25rem;
-    background: var(--bg-primary);
-    transition: var(--transition);
 }
 
 .time-label {
@@ -704,7 +248,6 @@ body {
     font-weight: 500;
     text-align: right;
     flex-shrink: 0;
-    transition: var(--transition);
 }
 
 .schedule-item {
@@ -721,7 +264,6 @@ body {
     border-radius: 50%;
     margin-top: 2px;
     flex-shrink: 0;
-    transition: var(--transition);
 }
 
 .schedule-item.appointment .schedule-dot {
@@ -737,14 +279,12 @@ body {
     color: var(--text-primary);
     display: block;
     margin-bottom: 0.25rem;
-    transition: var(--transition);
 }
 
 .schedule-content span {
     font-size: 0.8rem;
     color: var(--text-secondary);
     display: block;
-    transition: var(--transition);
 }
 
 .appointment-time {
@@ -752,17 +292,15 @@ body {
     font-weight: 500;
 }
 
-/* Actions Grid */
+/* Actions Grid Empleado */
 .actions-grid {
     padding: 1rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
-    background: var(--bg-primary);
-    transition: var(--transition);
 }
 
-.action-btn {
+.actions-card .action-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -777,19 +315,19 @@ body {
     transition: var(--transition);
 }
 
-.action-btn:hover {
+.actions-card .action-btn:hover {
     background: var(--primary-color);
     color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
     border-color: var(--primary-color);
 }
 
-.action-btn i {
+.actions-card .action-btn i {
     font-size: 1.25rem;
 }
 
-.action-btn span {
+.actions-card .action-btn span {
     font-size: 0.8rem;
     font-weight: 500;
     text-align: center;
@@ -801,8 +339,6 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
-    background: var(--bg-primary);
-    transition: var(--transition);
 }
 
 .metric-item {
@@ -823,14 +359,12 @@ body {
     font-weight: 700;
     color: var(--primary-color);
     margin-bottom: 0.5rem;
-    transition: var(--transition);
 }
 
 .metric-label {
     font-size: 0.8rem;
     color: var(--text-secondary);
     margin-bottom: 0.5rem;
-    transition: var(--transition);
 }
 
 .metric-trend {
@@ -854,10 +388,14 @@ body {
     color: var(--text-secondary);
 }
 
-/* Responsive */
+/* Responsive Empleado */
 @media (max-width: 1024px) {
     .content-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .tasks-card, .schedule-card, .actions-card, .metrics-card {
+        grid-column: 1;
     }
     
     .actions-grid {
@@ -866,37 +404,12 @@ body {
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-    }
-    
-    .sidebar.active {
-        transform: translateX(0);
-    }
-    
-    .main-content {
-        margin-left: 0;
-    }
-    
-    .menu-toggle {
-        display: block;
-    }
-    
     .stats-grid {
         grid-template-columns: 1fr 1fr;
     }
     
     .quick-stats, .content-grid {
         padding: 1rem;
-    }
-    
-    .header-right {
-        gap: 1rem;
-    }
-    
-    .shift-info, .current-time {
-        display: none;
     }
     
     .actions-grid {

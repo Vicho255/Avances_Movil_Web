@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
             this.applyTheme(newTheme);
             
             // Mostrar feedback visual
-            this.showThemeNotification(newTheme);
+            //this.showThemeNotification(newTheme);
             
             return newTheme;
         }
