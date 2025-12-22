@@ -1,0 +1,2588 @@
+ahora nesesito que esto:
+<?php
+// api/ordenes-data.php
+session_start();
+
+// Verificar sesión de administrador - COMENTADO PARA PRUEBAS
+// if (!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE || $_SESSION['tipo_persona'] !== 'Administrador') {
+//     header('Content-Type: application/json');
+//     echo json_encode(['error' => 'No autorizado']);
+//     exit();
+// }
+
+// Cargar la clase Database desde la raíz
+require_once __DIR__ . '/../config/database.php';
+
+// Obtener conexión usando tu función helper
+try {
+    $pdo = getDB();
+} catch (Exception $e) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Error de conexión a la base de datos: ' . $e->getMessage()]);
+    exit();
+}
+
+// Determinar acción
+$accion = $_GET['accion'] ?? $_POST['accion'] ?? '';
+
+header('Content-Type: application/json');
+
+// Manejar la acción - SIN PARÁMETROS EN LAS LLAMADAS
+switch ($accion) {
+    case 'obtener_clientes':
+        obtenerClientes();
+        break;
+    case 'obtener_vehiculos':
+        obtenerVehiculos();
+        break;
+    case 'obtener_trabajadores':
+        obtenerTrabajadores();
+        break;
+    case 'obtener_averias':
+        obtenerAverias();
+        break;
+    case 'obtener_repuestos':
+        obtenerRepuestos();
+        break;
+    case 'crear_orden':
+        crearOrdenTrabajo();
+        break;
+    case 'obtener_ordenes':
+        obtenerOrdenesActivas();
+        break;
+    case 'obtener_detalles':
+        obtenerDetallesOrden();
+        break;
+    case 'cambiar_estado':
+        cambiarEstadoOrden();
+        break;
+    case 'obtener_cliente_info':
+        obtenerClienteInfo();
+        break;
+    case 'obtener_vehiculo_info':
+        obtenerVehiculoInfo();
+        break;
+    default:
+        echo json_encode(['error' => 'Acción no válida: ' . $accion]);
+}
+
+// Funciones sin parámetros - usan variables globales
+
+function obtenerClientes() {
+    global $pdo;
+    
+    try {
+        $query = "SELECT p.rut, p.nombre || ' ' || p.apellido as nombre_completo 
+                  FROM persona p 
+                  WHERE p.tipo_persona = 'Cliente' 
+                  ORDER BY p.nombre, p.apellido";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $clientes = $stmt->fetchAll();
+        
+        echo json_encode($clientes);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener clientes: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerVehiculos() {
+    global $pdo;
+    
+    try {
+        $query = "SELECT v.patente, 
+                         v.color,
+                         p.nombre || ' ' || p.apellido as dueno,
+                         COALESCE(m.nombre || ' ' || mo.nombre, 'Sin especificar') as modelo
+                  FROM vehiculo v
+                  LEFT JOIN persona p ON v.persona_rut = p.rut
+                  LEFT JOIN tener t ON v.patente = t.vehiculo_id
+                  LEFT JOIN modelo mo ON t.modelo_id = mo.codigo
+                  LEFT JOIN marca m ON mo.marca_id = m.codigo
+                  ORDER BY v.patente";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $vehiculos = $stmt->fetchAll();
+        
+        echo json_encode($vehiculos);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener vehículos: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerTrabajadores() {
+    global $pdo;
+    
+    try {
+        $query = "SELECT p.rut, p.nombre || ' ' || p.apellido as nombre_completo 
+                  FROM persona p 
+                  WHERE p.tipo_persona IN ('Empleado', 'Administrador')
+                  ORDER BY p.nombre, p.apellido";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $trabajadores = $stmt->fetchAll();
+        
+        echo json_encode($trabajadores);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener trabajadores: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerAverias() {
+    global $pdo;
+    
+    try {
+        $query = "SELECT codigo, nombre FROM averia ORDER BY nombre";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $averias = $stmt->fetchAll();
+        
+        echo json_encode($averias);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener averías: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerRepuestos() {
+    global $pdo;
+    
+    try {
+        $query = "SELECT codigo, nombre, costo FROM pieza WHERE cantidad > 0 ORDER BY nombre";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute();
+        $repuestos = $stmt->fetchAll();
+        
+        echo json_encode($repuestos);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener repuestos: ' . $e->getMessage()]);
+    }
+}
+
+function crearOrdenTrabajo() {
+    global $pdo;
+    
+    try {
+        // Iniciar transacción
+        $pdo->beginTransaction();
+        
+        // 1. Crear orden de trabajo
+        $queryOrden = "INSERT INTO orden_trabajo (vehiculo_id, descripcion, estado) 
+                       VALUES (:vehiculo_id, :descripcion, 'Pendiente') 
+                       RETURNING numero";
+        
+        $stmtOrden = $pdo->prepare($queryOrden);
+        $stmtOrden->execute([
+            ':vehiculo_id' => $_POST['vehiculo_patente'] ?? '',
+            ':descripcion' => $_POST['descripcion'] ?? ''
+        ]);
+        
+        $ordenId = $stmtOrden->fetchColumn();
+        
+        // 2. Asignar trabajador
+        if (!empty($_POST['trabajador_rut'])) {
+            $queryTrabajar = "INSERT INTO trabajar (persona_id, orden_trabajo_id) 
+                              VALUES (:trabajador_id, :orden_id)";
+            
+            $stmtTrabajar = $pdo->prepare($queryTrabajar);
+            $stmtTrabajar->execute([
+                ':trabajador_id' => $_POST['trabajador_rut'],
+                ':orden_id' => $ordenId
+            ]);
+        }
+        
+        // 3. Agregar averías (si las hay)
+        if (isset($_POST['averias'])) {
+            // Procesar averías
+            $averias = [];
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'averias') === 0 && preg_match('/averias\[(\d+)\]\[(\w+)\]/', $key, $matches)) {
+                    $index = $matches[1];
+                    $field = $matches[2];
+                    if (!isset($averias[$index])) {
+                        $averias[$index] = [];
+                    }
+                    $averias[$index][$field] = $value;
+                }
+            }
+            
+            foreach ($averias as $averia) {
+                if (!empty($averia['id']) && !empty($averia['detalle'])) {
+                    $queryAveria = "INSERT INTO orden_averia (orden_trabajo_numero, averia_id) 
+                                    VALUES (:orden_id, :averia_id)";
+                    
+                    $stmtAveria = $pdo->prepare($queryAveria);
+                    $stmtAveria->execute([
+                        ':orden_id' => $ordenId,
+                        ':averia_id' => $averia['id']
+                    ]);
+                }
+            }
+        }
+        
+        // 4. Agregar repuestos (si los hay)
+        if (isset($_POST['repuestos'])) {
+            // Procesar repuestos
+            $repuestos = [];
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'repuestos') === 0 && preg_match('/repuestos\[(\d+)\]\[(\w+)\]/', $key, $matches)) {
+                    $index = $matches[1];
+                    $field = $matches[2];
+                    if (!isset($repuestos[$index])) {
+                        $repuestos[$index] = [];
+                    }
+                    $repuestos[$index][$field] = $value;
+                }
+            }
+            
+            foreach ($repuestos as $repuesto) {
+                if (!empty($repuesto['codigo']) && !empty($repuesto['cantidad'])) {
+                    $costo = $repuesto['costo'] ?? 0;
+                    
+                    // Registrar en historial
+                    $queryHistorial = "INSERT INTO historial_repuestos_vehiculo 
+                                      (repuesto_codigo, vehiculo_patente, orden_trabajo_numero, 
+                                       cantidad_instalada, costo_unitario) 
+                                      VALUES (:repuesto_codigo, :vehiculo_patente, :orden_id, 
+                                              :cantidad, :costo)";
+                    
+                    $stmtHistorial = $pdo->prepare($queryHistorial);
+                    $stmtHistorial->execute([
+                        ':repuesto_codigo' => $repuesto['codigo'],
+                        ':vehiculo_patente' => $_POST['vehiculo_patente'],
+                        ':orden_id' => $ordenId,
+                        ':cantidad' => $repuesto['cantidad'],
+                        ':costo' => $costo
+                    ]);
+                }
+            }
+        }
+        
+        $pdo->commit();
+        echo json_encode(['success' => true, 'orden_id' => $ordenId, 'mensaje' => 'Orden creada exitosamente']);
+        
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+}
+
+function obtenerOrdenesActivas() {
+    global $pdo;
+    
+    try {
+        $pagina = max(1, intval($_GET['pagina'] ?? 1));
+        $porPagina = intval($_GET['por_pagina'] ?? 10);
+        $offset = ($pagina - 1) * $porPagina;
+        
+        // Construir condiciones y JOINS dinámicamente
+        $condiciones = ["o.estado != 'Completada'"];
+        $params = [];
+        $joins = [
+            "LEFT JOIN vehiculo v ON o.vehiculo_id = v.patente",
+            "LEFT JOIN persona p ON v.persona_rut = p.rut",
+            "LEFT JOIN trabajar t ON o.numero = t.orden_trabajo_id",
+            "LEFT JOIN persona tr ON t.persona_id = tr.rut"
+        ];
+        
+        if (!empty($_GET['estado'])) {
+            $condiciones[] = "o.estado = :estado";
+            $params[':estado'] = $_GET['estado'];
+        }
+        
+        if (!empty($_GET['trabajador'])) {
+            $condiciones[] = "t.persona_id = :trabajador";
+            $params[':trabajador'] = $_GET['trabajador'];
+        }
+        
+        $where = !empty($condiciones) ? 'WHERE ' . implode(' AND ', $condiciones) : '';
+        $joinsStr = implode(' ', $joins);
+        
+        // Consulta para órdenes - CORREGIDA
+        $query = "SELECT o.numero, o.fecha, o.descripcion, o.estado,
+                         v.patente, v.color,
+                         p.nombre || ' ' || p.apellido as cliente_nombre,
+                         tr.nombre || ' ' || tr.apellido as trabajador_nombre
+                  FROM orden_trabajo o
+                  $joinsStr
+                  $where
+                  ORDER BY o.fecha DESC, o.numero DESC
+                  LIMIT :limit OFFSET :offset";
+        
+        $stmt = $pdo->prepare($query);
+        $params[':limit'] = $porPagina;
+        $params[':offset'] = $offset;
+        
+        foreach ($params as $key => $value) {
+            if ($key === ':limit' || $key === ':offset') {
+                $stmt->bindValue($key, $value, PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue($key, $value);
+            }
+        }
+        
+        $stmt->execute();
+        $ordenes = $stmt->fetchAll();
+        
+        // Contar total - también necesita los mismos JOINS
+        $queryCount = "SELECT COUNT(*) 
+                       FROM orden_trabajo o
+                       $joinsStr
+                       $where";
+        
+        $stmtCount = $pdo->prepare($queryCount);
+        
+        // Preparar parámetros para count
+        $countParams = [];
+        foreach ($params as $key => $value) {
+            if ($key !== ':limit' && $key !== ':offset') {
+                $countParams[$key] = $value;
+            }
+        }
+        
+        $stmtCount->execute($countParams);
+        $total = $stmtCount->fetchColumn();
+        $totalPaginas = ceil($total / $porPagina);
+        
+        echo json_encode([
+            'ordenes' => $ordenes,
+            'paginacion' => [
+                'pagina' => $pagina,
+                'por_pagina' => $porPagina,
+                'total' => $total,
+                'total_paginas' => $totalPaginas
+            ]
+        ]);
+    } catch (Exception $e) {
+        // Mensaje de error más detallado
+        echo json_encode([
+            'error' => 'Error al obtener órdenes: ' . $e->getMessage(),
+            'query_debug' => $query ?? 'No hay query',
+            'params_debug' => $params ?? 'No hay params'
+        ]);
+    }
+}
+
+function obtenerDetallesOrden() {
+    global $pdo;
+    
+    try {
+        $ordenId = $_GET['id'] ?? 0;
+        
+        if (!$ordenId) {
+            echo json_encode(['error' => 'ID de orden no especificado']);
+            return;
+        }
+        
+        // Datos básicos
+        $query = "SELECT o.*, v.*, 
+                         p.nombre || ' ' || p.apellido as cliente_nombre,
+                         tr.nombre || ' ' || tr.apellido as trabajador_nombre
+                  FROM orden_trabajo o
+                  LEFT JOIN vehiculo v ON o.vehiculo_id = v.patente
+                  LEFT JOIN persona p ON v.persona_rut = p.rut
+                  LEFT JOIN trabajar t ON o.numero = t.orden_trabajo_id
+                  LEFT JOIN persona tr ON t.persona_id = tr.rut
+                  WHERE o.numero = :id";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([':id' => $ordenId]);
+        $orden = $stmt->fetch();
+        
+        if (!$orden) {
+            echo json_encode(['error' => 'Orden no encontrada']);
+            return;
+        }
+        
+        // Averías
+        $queryAverias = "SELECT a.nombre 
+                         FROM orden_averia oa
+                         LEFT JOIN averia a ON oa.averia_id = a.codigo
+                         WHERE oa.orden_trabajo_numero = :id";
+        $stmtAverias = $pdo->prepare($queryAverias);
+        $stmtAverias->execute([':id' => $ordenId]);
+        $averias = $stmtAverias->fetchAll();
+        
+        // Repuestos
+        $queryRepuestos = "SELECT hr.repuesto_codigo, p.nombre, hr.cantidad_instalada, hr.costo_unitario
+                           FROM historial_repuestos_vehiculo hr
+                           LEFT JOIN pieza p ON hr.repuesto_codigo = p.codigo
+                           WHERE hr.orden_trabajo_numero = :id";
+        $stmtRepuestos = $pdo->prepare($queryRepuestos);
+        $stmtRepuestos->execute([':id' => $ordenId]);
+        $repuestos = $stmtRepuestos->fetchAll();
+        
+        echo json_encode([
+            'orden' => $orden,
+            'averias' => $averias,
+            'repuestos' => $repuestos
+        ]);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener detalles: ' . $e->getMessage()]);
+    }
+}
+
+function cambiarEstadoOrden() {
+    global $pdo;
+    
+    try {
+        $ordenId = $_POST['orden_id'] ?? 0;
+        $estado = $_POST['estado'] ?? '';
+        
+        if (!$ordenId || !$estado) {
+            echo json_encode(['error' => 'Datos insuficientes']);
+            return;
+        }
+        
+        $query = "UPDATE orden_trabajo SET estado = :estado WHERE numero = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            ':estado' => $estado,
+            ':id' => $ordenId
+        ]);
+        
+        echo json_encode(['success' => true, 'mensaje' => 'Estado actualizado']);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al cambiar estado: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerClienteInfo() {
+    global $pdo;
+    
+    try {
+        $rut = $_GET['rut'] ?? '';
+        
+        if (!$rut) {
+            echo json_encode(['error' => 'RUT no especificado']);
+            return;
+        }
+        
+        $query = "SELECT p.*, 
+                         (SELECT telefono FROM telefono_persona WHERE persona_id = p.rut LIMIT 1) as telefono,
+                         d.region, d.ciudad, d.calle, d.numero
+                  FROM persona p
+                  LEFT JOIN direccion d ON p.direccion_codigo_postal = d.codigo_postal
+                  WHERE p.rut = :rut";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([':rut' => $rut]);
+        $cliente = $stmt->fetch();
+        
+        if (!$cliente) {
+            echo json_encode(['error' => 'Cliente no encontrado']);
+            return;
+        }
+        
+        echo json_encode($cliente);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener información del cliente: ' . $e->getMessage()]);
+    }
+}
+
+function obtenerVehiculoInfo() {
+    global $pdo;
+    
+    try {
+        $patente = $_GET['patente'] ?? '';
+        
+        if (!$patente) {
+            echo json_encode(['error' => 'Patente no especificada']);
+            return;
+        }
+        
+        $query = "SELECT v.*, 
+                         p.nombre || ' ' || p.apellido as dueno_nombre,
+                         m.nombre as marca, mo.nombre as modelo_nombre,
+                         tv.nombre as tipo_vehiculo
+                  FROM vehiculo v
+                  LEFT JOIN persona p ON v.persona_rut = p.rut
+                  LEFT JOIN tener t ON v.patente = t.vehiculo_id
+                  LEFT JOIN modelo mo ON t.modelo_id = mo.codigo
+                  LEFT JOIN marca m ON mo.marca_id = m.codigo
+                  LEFT JOIN tipo_vehiculo tv ON t.tipo_vehiculo_id = tv.codigo
+                  WHERE v.patente = :patente";
+        
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([':patente' => $patente]);
+        $vehiculo = $stmt->fetch();
+        
+        if (!$vehiculo) {
+            echo json_encode(['error' => 'Vehículo no encontrado']);
+            return;
+        }
+        
+        echo json_encode($vehiculo);
+    } catch (Exception $e) {
+        echo json_encode(['error' => 'Error al obtener información del vehículo: ' . $e->getMessage()]);
+    }
+}
+?>
+
+Este enlasado tambien al apartado del empleado:
+Agenda empleado
+<?php
+session_start();
+
+// VERIFICACIÓN DE SESIÓN
+if(!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE){
+    header('Location: login.php');
+    exit();
+}
+
+// Verificar que sea empleado
+if($_SESSION['tipo_persona'] !== 'Empleado'){
+    header('Location: login.php');
+    exit();
+}
+
+// Obtener datos del usuario de la sesión
+$nombre_usuario = $_SESSION['usuario'] ?? 'Empleado';
+$rut_usuario = $_SESSION['rut'] ?? '';
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Empleado</title>
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/agenda-empleado.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <?php include 'components/sidebar-empleado.php'; ?>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <?php include 'components/header-empleado.php'; ?>
+
+        <!-- Agenda Section -->
+        <section class="agenda-section">
+            <h1>Agenda de <?php echo htmlspecialchars($nombre_usuario); ?></h1>
+            <div id="agenda-container">
+                <!-- Aquí se cargará la agenda mediante JavaScript -->
+            </div>
+        </section>
+    </main>
+    <script src="scripts/agenda-empleado.js"></script>
+    <script src="components/theme-manager.js"></script>
+</body>
+<?php
+session_start();
+
+// VERIFICACIÓN DE SESIÓN
+if(!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE){
+    header('Location: login.php');
+    exit();
+}
+
+// Verificar que sea empleado
+if($_SESSION['tipo_persona'] !== 'Empleado'){
+    header('Location: login.php');
+    exit();
+}
+
+// Obtener datos del usuario de la sesión
+$nombre_usuario = $_SESSION['usuario'] ?? 'Empleado';
+$rut_usuario = $_SESSION['rut'] ?? '';
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Empleado - MiAutomotriz</title>
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/dashoboasrEmpleado.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <?php include 'components/sidebar-empleado.php'; ?>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <?php include 'components/header-empleado.php'; ?>
+
+        <!-- Quick Stats -->
+        <section class="quick-stats">
+            <div class="stats-grid">
+                <div class="quick-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>3</h3>
+                        <p>En Progreso</p>
+                    </div>
+                </div>
+
+                <div class="quick-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>5</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+
+                <div class="quick-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>12</h3>
+                        <p>Completados Hoy</p>
+                    </div>
+                </div>
+
+                <div class="quick-stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>2.5h</h3>
+                        <p>Tiempo Promedio</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <section class="content-grid">
+            <!-- Current Tasks -->
+            <div class="tasks-card">
+                <div class="card-header">
+                    <h3>Tareas en Progreso</h3>
+                    <button class="view-all">Ver Todas</button>
+                </div>
+                <div class="tasks-list">
+                    <div class="task-item urgent">
+                        <div class="task-info">
+                            <div class="task-header">
+                                <h4>Cambio de Frenos - Toyota Corolla</h4>
+                                <span class="task-time">2:30h</span>
+                            </div>
+                            <p class="task-desc">ABC-123 • Juan González</p>
+                            <div class="task-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 75%"></div>
+                                </div>
+                                <span>75%</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="task-btn pause">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="task-btn complete">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-header">
+                                <h4>Alineación y Balanceo - Honda Civic</h4>
+                                <span class="task-time">1:15h</span>
+                            </div>
+                            <p class="task-desc">XYZ-789 • María López</p>
+                            <div class="task-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 40%"></div>
+                                </div>
+                                <span>40%</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="task-btn pause">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="task-btn complete">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="task-item">
+                        <div class="task-info">
+                            <div class="task-header">
+                                <h4>Cambio de Aceite - Nissan Sentra</h4>
+                                <span class="task-time">0:45h</span>
+                            </div>
+                            <p class="task-desc">DEF-456 • Carlos Ruiz</p>
+                            <div class="task-progress">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 25%"></div>
+                                </div>
+                                <span>25%</span>
+                            </div>
+                        </div>
+                        <div class="task-actions">
+                            <button class="task-btn pause">
+                                <i class="fas fa-pause"></i>
+                            </button>
+                            <button class="task-btn complete">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Schedule -->
+            <div class="schedule-card">
+                <div class="card-header">
+                    <h3>Agenda de Hoy</h3>
+                    <div class="date-nav">
+                        <button class="nav-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span id="todayDate"></span>
+                        <button class="nav-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="schedule-timeline">
+                    <div class="time-slot">
+                        <div class="time-label">08:00</div>
+                        <div class="schedule-item">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Inicio de Turno</strong>
+                                <span>Registro de entrada</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot">
+                        <div class="time-label">09:00</div>
+                        <div class="schedule-item appointment">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Revisión General - Ford Focus</strong>
+                                <span>Cliente: Ana Martínez</span>
+                                <span class="appointment-time">09:00 - 10:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot">
+                        <div class="time-label">11:00</div>
+                        <div class="schedule-item break">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Descanso</strong>
+                                <span>11:00 - 11:30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot">
+                        <div class="time-label">13:00</div>
+                        <div class="schedule-item appointment">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Cambio de Neumáticos - Chevrolet Aveo</strong>
+                                <span>Cliente: Roberto Sánchez</span>
+                                <span class="appointment-time">13:00 - 14:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot">
+                        <div class="time-label">15:00</div>
+                        <div class="schedule-item">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Tiempo Disponible</strong>
+                                <span>Tareas pendientes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="time-slot">
+                        <div class="time-label">17:00</div>
+                        <div class="schedule-item">
+                            <div class="schedule-dot"></div>
+                            <div class="schedule-content">
+                                <strong>Fin de Turno</strong>
+                                <span>Registro de salida</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="actions-card">
+                <div class="card-header">
+                    <h3>Acciones Rápidas</h3>
+                </div>
+                <div class="actions-grid">
+                    <button class="action-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Nueva Tarea</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Checklist</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-tools"></i>
+                        <span>Solicitar Repuestos</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reporte Diario</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-car-crash"></i>
+                        <span>Reportar Problema</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Soporte</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="metrics-card">
+                <div class="card-header">
+                    <h3>Mi Rendimiento</h3>
+                    <select class="metrics-filter">
+                        <option>Esta Semana</option>
+                        <option>Este Mes</option>
+                        <option>Este Trimestre</option>
+                    </select>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-value">94%</div>
+                        <div class="metric-label">Eficiencia</div>
+                        <div class="metric-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>2%</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">2.3h</div>
+                        <div class="metric-label">Tiempo Promedio</div>
+                        <div class="metric-trend down">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>0.2h</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">12</div>
+                        <div class="metric-label">Tareas/Día</div>
+                        <div class="metric-trend up">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>1</span>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">0</div>
+                        <div class="metric-label">Reclamos</div>
+                        <div class="metric-trend neutral">
+                            <i class="fas fa-minus"></i>
+                            <span>0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="scripts/dashboasrEmpleado.js"></script>
+    
+    <script>
+        // Inicializar funcionalidades específicas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Toggle sidebar en móvil
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', () => {
+                    sidebar.classList.toggle('active');
+                });
+            }
+        });
+        // Actualizar hora en tiempo real
+        function actualizarHora() {
+            const ahora = new Date();
+            const opciones = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('currentDateTime').textContent = 
+                ahora.toLocaleDateString('es-ES', opciones);
+        }
+        
+        // Actualizar cada segundo
+        setInterval(actualizarHora, 1000);
+        actualizarHora();
+        
+        // Mostrar información de sesión en consola para debug
+        console.log('Sesión activa empleado:', {
+            usuario: '<?php echo $_SESSION['usuario'] ?? ''; ?>',
+            tipo: '<?php echo $_SESSION['tipo_persona'] ?? ''; ?>',
+            rut: '<?php echo $_SESSION['rut'] ?? ''; ?>'
+        });
+    </script>
+
+</body>
+</html>
+
+Tareas empleado
+<?php
+session_start();
+
+// VERIFICACIÓN DE SESIÓN
+if(!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE){
+    header('Location: login.php');
+    exit();
+}
+
+// Verificar que sea empleado
+if($_SESSION['tipo_persona'] !== 'Empleado'){
+    header('Location: login.php');
+    exit();
+}
+
+// Obtener datos del usuario de la sesión
+$nombre_usuario = $_SESSION['usuario'] ?? 'Empleado';
+$rut_usuario = $_SESSION['rut'] ?? '';
+?>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Empleado - MiAutomotriz</title>
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/gestion-tareas.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <?php include 'components/sidebar-empleado.php'; ?>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <?php include 'components/header-empleado.php'; ?>
+        
+        <!-- Dashboard de Tareas -->
+        <div class="dashboard-tareas">
+            <!-- Encabezado -->
+            <div class="dashboard-header">
+                <h1><i class="fas fa-tasks"></i> Gestión de Tareas</h1>
+                <p>Bienvenido, <?php echo htmlspecialchars($nombre_usuario); ?>. Aquí puedes gestionar tus tareas asignadas.</p>
+            </div>
+                
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon urgent">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="urgent-count">0</h3>
+                        <p>Tareas Urgentes</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon in-progress">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="progress-count">0</h3>
+                        <p>En Progreso</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon completed">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="completed-count">0</h3>
+                        <p>Completadas Hoy</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon pending">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pending-count">0</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sección Principal de Tareas -->
+            <div class="tasks-section">
+                <!-- Tareas en Progreso -->
+                <div class="tasks-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-spinner"></i> Tareas en Progreso</h3>
+                        <button class="view-all" onclick="verTodasTareas()">Ver Todas</button>
+                    </div>
+                    <div class="tasks-list" id="tareas-progreso-container">
+                        <!-- Las tareas en progreso se cargarán aquí -->
+                        <div class="empty-state" id="empty-progress">
+                            <i class="fas fa-clipboard-list"></i>
+                            <p>No hay tareas en progreso</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sidebar de Filtros e Información -->
+                <div class="sidebar-tasks">
+                    <!-- Filtros -->
+                    <div class="sidebar-card">
+                        <h4><i class="fas fa-filter"></i> Filtros</h4>
+                        <div class="filter-options">
+                            <button class="filter-btn active" onclick="filtrarTareas('todas')">
+                                <i class="fas fa-list"></i> Todas las tareas
+                            </button>
+                            <button class="filter-btn" onclick="filtrarTareas('urgentes')">
+                                <i class="fas fa-exclamation-circle"></i> Urgentes
+                            </button>
+                            <button class="filter-btn" onclick="filtrarTareas('hoy')">
+                                <i class="fas fa-calendar-day"></i> Para hoy
+                            </button>
+                            <button class="filter-btn" onclick="filtrarTareas('completadas')">
+                                <i class="fas fa-check-circle"></i> Completadas
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Información Rápida -->
+                    <div class="sidebar-card">
+                        <h4><i class="fas fa-info-circle"></i> Información</h4>
+                        <div style="font-size: 0.9rem; color: #6c757d;">
+                            <p><i class="fas fa-user" style="color: #3498db; width: 20px;"></i> 
+                               <strong>Empleado:</strong> <?php echo htmlspecialchars($nombre_usuario); ?></p>
+                            <p><i class="fas fa-id-card" style="color: #3498db; width: 20px;"></i> 
+                               <strong>RUT:</strong> <?php echo htmlspecialchars($rut_usuario); ?></p>
+                            <p><i class="fas fa-calendar" style="color: #3498db; width: 20px;"></i> 
+                               <strong>Fecha:</strong> <span id="current-date"></span></p>
+                            <p><i class="fas fa-clock" style="color: #3498db; width: 20px;"></i> 
+                               <strong>Hora:</strong> <span id="current-time"></span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Acciones Rápidas -->
+                    <div class="sidebar-card">
+                        <h4><i class="fas fa-bolt"></i> Acciones Rápidas</h4>
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button class="filter-btn" onclick="marcarTodasCompletadas()">
+                                <i class="fas fa-check-double"></i> Marcar todas como completadas
+                            </button>
+                            <button class="filter-btn" onclick="exportarReporte()">
+                                <i class="fas fa-download"></i> Exportar reporte
+                            </button>
+                            <button class="filter-btn" onclick="solicitarNuevasTareas()">
+                                <i class="fas fa-plus-circle"></i> Solicitar nuevas tareas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tareas Completadas -->
+            <div class="tasks-card completed-tasks">
+                <div class="card-header">
+                    <h3><i class="fas fa-check-circle"></i> Tareas Completadas Recientemente</h3>
+                    <button class="view-all" onclick="verHistorialCompletadas()">Ver Historial</button>
+                </div>
+                <div class="tasks-list" id="tareas-completadas-container">
+                    <!-- Las tareas completadas se cargarán aquí -->
+                    <div class="empty-state" id="empty-completed">
+                        <i class="fas fa-clipboard-check"></i>
+                        <p>No hay tareas completadas recientemente</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal para Detalles de Tarea -->
+    <div id="task-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="modal-title">Detalles de Tarea</h3>
+                <span class="close-modal" onclick="cerrarModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/gestion-tareas.js"></script>
+    <script>
+        // Mostrar información de sesión en consola para debug
+        console.log('Sesión activa empleado:', {
+            usuario: '<?php echo $_SESSION['usuario'] ?? ''; ?>',
+            tipo: '<?php echo $_SESSION['tipo_persona'] ?? ''; ?>',
+            rut: '<?php echo $_SESSION['rut'] ?? ''; ?>'
+        });
+    </script>
+
+</body>
+
+Script rara agenda empleado
+
+// agenda-empleado.js - Sistema de agenda para empleados
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📅 Inicializando Agenda de Empleado');
+    
+    // Variables globales
+    let ordenesDisponibles = [];
+    let ordenesAgendadas = [];
+    let calendarioSemana = [];
+    let fechaInicioSemana;
+    let fechaFinSemana;
+    let ordenSeleccionada = null;
+    
+    // Elementos DOM
+    let agendaContainer = null;
+    let modal = null;
+    let closeModal = null;
+    
+    // Inicializar
+    init();
+    
+    async function init() {
+        try {
+            // Crear estructura HTML inicial
+            crearEstructuraBase();
+            
+            // Cargar datos
+            await cargarDatos();
+            
+            // Renderizar interfaz con datos
+            renderizarInterfaz();
+            
+            // Inicializar event listeners
+            initEventListeners();
+            
+        } catch (error) {
+            console.error('❌ Error inicializando agenda:', error);
+            mostrarError('Error al cargar la agenda');
+        }
+    }
+
+        // Actualizar hora
+    function updateTime() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        const timeElement = document.getElementById('currentDateTime');
+        if (timeElement) {
+            timeElement.textContent = dateStr;
+        }
+    }
+    
+    // Iniciar actualización de hora
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // ==================== CREAR ESTRUCTURA BASE ====================
+    function crearEstructuraBase() {
+        // Crear contenedor principal si no existe
+        const mainContainer = document.getElementById('agenda-container');
+        if (!mainContainer) return;
+        
+        agendaContainer = mainContainer;
+        
+        // Crear estructura base de la agenda
+        agendaContainer.innerHTML = `
+            <div class="agenda-container">
+                <!-- Lista de órdenes disponibles -->
+                <div class="agenda-card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-clipboard-list"></i>
+                            Órdenes Disponibles
+                            <span class="card-badge loading-badge">...</span>
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <p>Cargando órdenes disponibles...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Calendario semanal -->
+                <div class="agenda-card">
+                    <div class="card-header">
+                        <h2>
+                            <i class="fas fa-calendar-week"></i>
+                            Mi Agenda Semanal
+                            <span class="card-badge loading-badge">...</span>
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="week-calendar">
+                            <div class="week-header">
+                                <div class="day-header">Lun</div>
+                                <div class="day-header">Mar</div>
+                                <div class="day-header">Mié</div>
+                                <div class="day-header">Jue</div>
+                                <div class="day-header">Vie</div>
+                                <div class="day-header">Sáb</div>
+                                <div class="day-header">Dom</div>
+                            </div>
+                            <div class="week-grid">
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                                <div class="day-cell">
+                                    <div class="day-number">...</div>
+                                    <div class="day-orders"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="week-controls">
+                            <div class="week-navigation">
+                                <button class="btn-week" onclick="cambiarSemana(-1)">
+                                    <i class="fas fa-chevron-left"></i>
+                                    Semana anterior
+                                </button>
+                                <div class="current-week">
+                                    Cargando semana...
+                                </div>
+                                <button class="btn-week" onclick="cambiarSemana(1)">
+                                    Semana siguiente
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <button class="btn-today" onclick="irAHoy()">
+                                <i class="fas fa-calendar-day"></i>
+                                Hoy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal para detalles -->
+            <div id="ordenModal" class="modal">
+                <div class="modal-content">
+                    <!-- El contenido del modal se cargará dinámicamente -->
+                </div>
+            </div>
+        `;
+        
+        // Inicializar referencias a elementos del modal
+        modal = document.getElementById('ordenModal');
+        closeModal = document.querySelector('.close-modal');
+    }
+    
+    // ==================== CARGAR DATOS ====================
+    async function cargarDatos() {
+        console.log('📡 Cargando datos de órdenes...');
+        
+        try {
+            // Calcular fechas de la semana actual
+            const hoy = new Date();
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1); // Lunes
+            
+            fechaInicioSemana = inicioSemana.toISOString().split('T')[0];
+            fechaFinSemana = new Date(inicioSemana);
+            fechaFinSemana.setDate(inicioSemana.getDate() + 6); // Domingo
+            fechaFinSemana = fechaFinSemana.toISOString().split('T')[0];
+            
+            const url = `api/get-ordenes-empleado.php?fecha_inicio=${fechaInicioSemana}&fecha_fin=${fechaFinSemana}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            
+            // Verificar si es HTML
+            if (responseText.includes('<') || responseText.includes('Parse error') || responseText.includes('Fatal error')) {
+                throw new Error('El servidor devolvió HTML/error PHP');
+            }
+            
+            const data = JSON.parse(responseText);
+            
+            if (!data.success) {
+                // Si hay error, usar datos vacíos pero mantener estructura
+                console.warn('⚠️ Error en API:', data.message);
+                ordenesDisponibles = [];
+                ordenesAgendadas = [];
+                calendarioSemana = [];
+                return;
+            }
+            
+            // Asignar datos
+            ordenesDisponibles = data.ordenes_disponibles || [];
+            ordenesAgendadas = data.ordenes_agendadas || [];
+            calendarioSemana = data.calendario || [];
+            
+            console.log(`✅ ${ordenesDisponibles.length} órdenes disponibles cargadas`);
+            console.log(`✅ ${ordenesAgendadas.length} órdenes agendadas cargadas`);
+            
+        } catch (error) {
+            console.error('❌ Error cargando datos:', error);
+            // Mantener arrays vacíos para mantener la estructura
+            ordenesDisponibles = [];
+            ordenesAgendadas = [];
+            calendarioSemana = [];
+        }
+    }
+    
+    // ==================== RENDERIZAR INTERFAZ ====================
+    function renderizarInterfaz() {
+        if (!agendaContainer) return;
+        
+        // Actualizar badges con números reales
+        const badges = agendaContainer.querySelectorAll('.card-badge');
+        if (badges[0]) badges[0].textContent = ordenesDisponibles.length;
+        if (badges[1]) badges[1].textContent = ordenesAgendadas.length;
+        badges.forEach(badge => badge.classList.remove('loading-badge'));
+        
+        // Actualizar lista de órdenes disponibles
+        const cardBodyDisponibles = agendaContainer.querySelector('.agenda-card:first-child .card-body');
+        if (cardBodyDisponibles) {
+            cardBodyDisponibles.innerHTML = renderizarOrdenesDisponibles();
+        }
+        
+        // Actualizar calendario
+        const cardBodyCalendario = agendaContainer.querySelector('.agenda-card:nth-child(2) .card-body');
+        if (cardBodyCalendario) {
+            const weekCalendar = cardBodyCalendario.querySelector('.week-calendar');
+            const weekControls = cardBodyCalendario.querySelector('.week-controls');
+            
+            if (weekCalendar) {
+                weekCalendar.innerHTML = renderizarCalendario();
+            }
+            
+            if (weekControls) {
+                weekControls.innerHTML = renderizarControlesSemana();
+            }
+        }
+        
+        // Actualizar texto de semana actual
+        const currentWeek = agendaContainer.querySelector('.current-week');
+        if (currentWeek) {
+            const inicio = new Date(fechaInicioSemana);
+            const fin = new Date(fechaFinSemana);
+            
+            const formatoFecha = (fecha) => {
+                return fecha.toLocaleDateString('es-ES', { 
+                    day: '2-digit', 
+                    month: 'short' 
+                });
+            };
+            
+            currentWeek.textContent = `${formatoFecha(inicio)} - ${formatoFecha(fin)}`;
+        }
+    }
+    
+    function renderizarOrdenesDisponibles() {
+        if (ordenesDisponibles.length === 0) {
+            return `
+                <div class="empty-message">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>¡No hay órdenes disponibles!</h3>
+                    <p>Todas las órdenes han sido asignadas o están en proceso.</p>
+                    <button onclick="recargarDatos()" class="btn-refresh">
+                        <i class="fas fa-redo"></i> Actualizar
+                    </button>
+                </div>
+            `;
+        }
+        
+        return `
+            <div class="orders-list">
+                ${ordenesDisponibles.map(orden => `
+                    <div class="order-item" data-orden="${orden.Numero}">
+                        <div class="order-header">
+                            <span class="order-number">Orden #${orden.Numero}</span>
+                            <span class="order-status status-${orden.Estado ? orden.Estado.toLowerCase() : 'pendiente'}">
+                                ${orden.Estado || 'Pendiente'}
+                            </span>
+                        </div>
+                        <div class="order-details">
+                            <div class="order-vehicle">
+                                <i class="fas fa-car"></i>
+                                ${orden.Patente || 'Sin patente'} - ${orden.marca || ''} ${orden.modelo || ''}
+                            </div>
+                            <div class="order-date">
+                                <i class="far fa-calendar"></i>
+                                ${orden.Fecha ? formatFecha(orden.Fecha) : 'Sin fecha'}
+                            </div>
+                            ${orden.Descripcion ? `
+                                <div class="order-description">
+                                    ${escapeHTML(orden.Descripcion)}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="order-actions">
+                            <button class="btn-small btn-select" onclick="asignarOrden(${orden.Numero})">
+                                <i class="fas fa-calendar-plus"></i>
+                                Asignar a mi agenda
+                            </button>
+                            <button class="btn-small btn-details" onclick="mostrarDetallesOrden(${orden.Numero})">
+                                <i class="fas fa-eye"></i>
+                                Ver detalles
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    
+    function renderizarCalendario() {
+        const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        const hoy = new Date().toISOString().split('T')[0];
+        
+        let html = `
+            <div class="week-header">
+                ${diasSemana.map(dia => `
+                    <div class="day-header ${hoy === fechaInicioSemana ? 'today' : ''}">
+                        ${dia}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="week-grid">
+        `;
+        
+        // Calcular fechas de la semana
+        const fechaInicio = new Date(fechaInicioSemana);
+        
+        for (let i = 0; i < 7; i++) {
+            const fecha = new Date(fechaInicio);
+            fecha.setDate(fechaInicio.getDate() + i);
+            const fechaStr = fecha.toISOString().split('T')[0];
+            const diaNum = fecha.getDate();
+            const esHoy = fechaStr === hoy;
+            
+            // Buscar órdenes para este día
+            const ordenesDia = ordenesAgendadas.filter(orden => 
+                orden.Fecha_Agenda === fechaStr
+            );
+            
+            html += `
+                <div class="day-cell ${esHoy ? 'today' : ''}">
+                    <div class="day-number ${esHoy ? 'today' : ''}">
+                        ${diaNum}
+                    </div>
+                    <div class="day-orders">
+                        ${ordenesDia.length > 0 ? 
+                            ordenesDia.map(orden => `
+                                <div class="calendar-order status-${orden.Estado ? orden.Estado.toLowerCase() : 'pendiente'}" 
+                                     onclick="mostrarDetallesOrden(${orden.Numero})"
+                                     title="Orden #${orden.Numero} - ${orden.Patente || 'Sin patente'}">
+                                    <div class="calendar-order-status"></div>
+                                    <div class="calendar-order-number">#${orden.Numero}</div>
+                                    <div>${orden.Patente || 'Sin patente'}</div>
+                                    <small>${orden.Hora_Inicio ? orden.Hora_Inicio.substr(0, 5) : ''}</small>
+                                </div>
+                            `).join('')
+                        : 
+                            `<div class="empty-day">
+                                <i class="far fa-calendar-times"></i>
+                                <small>Sin órdenes</small>
+                            </div>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    function renderizarControlesSemana() {
+        const inicio = new Date(fechaInicioSemana);
+        const fin = new Date(fechaFinSemana);
+        
+        const formatoFecha = (fecha) => {
+            return fecha.toLocaleDateString('es-ES', { 
+                day: '2-digit', 
+                month: 'short' 
+            });
+        };
+        
+        return `
+            <div class="week-controls">
+                <div class="week-navigation">
+                    <button class="btn-week" onclick="cambiarSemana(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                        Semana anterior
+                    </button>
+                    <div class="current-week">
+                        ${formatoFecha(inicio)} - ${formatoFecha(fin)}
+                    </div>
+                    <button class="btn-week" onclick="cambiarSemana(1)">
+                        Semana siguiente
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <button class="btn-today" onclick="irAHoy()">
+                    <i class="fas fa-calendar-day"></i>
+                    Hoy
+                </button>
+            </div>
+        `;
+    }
+    
+    function renderizarModalDetalles() {
+        if (!ordenSeleccionada) return '';
+        
+        return `
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-clipboard"></i>
+                    Orden #${ordenSeleccionada.Numero}
+                </h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-section">
+                    <h4><i class="fas fa-info-circle"></i> Información General</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Estado</span>
+                            <span class="detail-value status-${ordenSeleccionada.Estado ? ordenSeleccionada.Estado.toLowerCase() : 'pendiente'}">
+                                ${ordenSeleccionada.Estado || 'Pendiente'}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Fecha Creación</span>
+                            <span class="detail-value">${ordenSeleccionada.Fecha ? formatFecha(ordenSeleccionada.Fecha) : 'No definida'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Vehículo</span>
+                            <span class="detail-value">
+                                ${ordenSeleccionada.Patente || 'Sin patente'} - 
+                                ${ordenSeleccionada.marca || ''} ${ordenSeleccionada.modelo || ''}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${ordenSeleccionada.Descripcion ? `
+                <div class="modal-section">
+                    <h4><i class="fas fa-file-alt"></i> Descripción</h4>
+                    <p>${escapeHTML(ordenSeleccionada.Descripcion)}</p>
+                </div>
+                ` : ''}
+                
+                ${ordenSeleccionada.averias ? `
+                <div class="modal-section">
+                    <h4><i class="fas fa-tools"></i> Averías Reportadas</h4>
+                    <div class="averias-list">
+                        ${ordenSeleccionada.averias.split(', ').map(averia => `
+                            <div class="averia-item">
+                                <i class="fas fa-wrench"></i>
+                                <span>${averia}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+                
+                ${ordenSeleccionada.Fecha_Agenda ? `
+                <div class="modal-section">
+                    <h4><i class="fas fa-calendar-alt"></i> Información de Agenda</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Fecha Asignada</span>
+                            <span class="detail-value">${formatFecha(ordenSeleccionada.Fecha_Agenda)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Hora Inicio</span>
+                            <span class="detail-value">${ordenSeleccionada.Hora_Inicio ? ordenSeleccionada.Hora_Inicio.substr(0, 5) : 'No definida'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Hora Fin</span>
+                            <span class="detail-value">${ordenSeleccionada.Hora_Fin ? ordenSeleccionada.Hora_Fin.substr(0, 5) : 'No definida'}</span>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+            <div class="modal-actions">
+                ${!ordenSeleccionada.Fecha_Agenda ? `
+                <button class="btn-modal btn-modal-primary" onclick="asignarOrden(${ordenSeleccionada.Numero})">
+                    <i class="fas fa-calendar-plus"></i>
+                    Asignar a mi agenda
+                </button>
+                ` : ''}
+                <button class="btn-modal btn-modal-secondary" onclick="cerrarModal()">
+                    <i class="fas fa-times"></i>
+                    Cerrar
+                </button>
+            </div>
+        `;
+    }
+    
+    // ==================== FUNCIONES DE INTERACCIÓN ====================
+    function initEventListeners() {
+        // Inicializar event listeners del modal cuando se crea
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('close-modal')) {
+                cerrarModal();
+            }
+        });
+        
+        // Cerrar modal al hacer clic fuera
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    cerrarModal();
+                }
+            });
+        }
+    }
+    
+    // ==================== FUNCIONES GLOBALES ====================
+    window.recargarDatos = async function() {
+        try {
+            // Mostrar loading
+            const badges = document.querySelectorAll('.card-badge');
+            badges.forEach(badge => {
+                badge.textContent = '...';
+                badge.classList.add('loading-badge');
+            });
+            
+            // Mostrar spinner en listas
+            const cardBodies = document.querySelectorAll('.card-body');
+            cardBodies.forEach(body => {
+                body.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando datos...</p>
+                    </div>
+                `;
+            });
+            
+            // Recargar datos
+            await cargarDatos();
+            
+            // Renderizar interfaz con nuevos datos
+            renderizarInterfaz();
+            
+            // Mostrar notificación
+            mostrarNotificacion('Datos actualizados', 'success');
+            
+        } catch (error) {
+            console.error('❌ Error recargando datos:', error);
+            mostrarNotificacion('Error al actualizar datos', 'error');
+            
+            // Aún así renderizar con datos vacíos
+            renderizarInterfaz();
+        }
+    };
+    
+    window.cambiarSemana = async function(semanas) {
+        try {
+            const fechaInicio = new Date(fechaInicioSemana);
+            fechaInicio.setDate(fechaInicio.getDate() + (semanas * 7));
+            
+            fechaInicioSemana = fechaInicio.toISOString().split('T')[0];
+            fechaFinSemana = new Date(fechaInicio);
+            fechaFinSemana.setDate(fechaInicio.getDate() + 6);
+            fechaFinSemana = fechaFinSemana.toISOString().split('T')[0];
+            
+            await recargarDatos();
+        } catch (error) {
+            console.error('❌ Error cambiando semana:', error);
+        }
+    };
+    
+    window.irAHoy = async function() {
+        try {
+            const hoy = new Date();
+            const inicioSemana = new Date(hoy);
+            inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1);
+            
+            fechaInicioSemana = inicioSemana.toISOString().split('T')[0];
+            fechaFinSemana = new Date(inicioSemana);
+            fechaFinSemana.setDate(inicioSemana.getDate() + 6);
+            fechaFinSemana = fechaFinSemana.toISOString().split('T')[0];
+            
+            await recargarDatos();
+        } catch (error) {
+            console.error('❌ Error yendo a hoy:', error);
+        }
+    };
+    
+    window.mostrarDetallesOrden = async function(numeroOrden) {
+        try {
+            // Buscar orden en disponibles o agendadas
+            ordenSeleccionada = [...ordenesDisponibles, ...ordenesAgendadas]
+                .find(orden => orden.Numero == numeroOrden);
+            
+            if (!ordenSeleccionada) {
+                mostrarNotificacion('Orden no encontrada', 'error');
+                return;
+            }
+            
+            // Mostrar modal
+            const modal = document.getElementById('ordenModal');
+            if (modal) {
+                modal.classList.add('active');
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.innerHTML = renderizarModalDetalles();
+                    
+                    // Agregar event listener al botón de cerrar
+                    const closeBtn = modalContent.querySelector('.close-modal');
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', cerrarModal);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error mostrando detalles:', error);
+            mostrarNotificacion('Error al mostrar detalles', 'error');
+        }
+    };
+    
+    window.asignarOrden = async function(numeroOrden) {
+        try {
+            const orden = ordenesDisponibles.find(o => o.Numero == numeroOrden);
+            
+            if (!orden) {
+                mostrarNotificacion('Orden no disponible', 'error');
+                return;
+            }
+            
+            // Solicitar fecha y hora al usuario
+            const hoy = new Date().toISOString().split('T')[0];
+            const fechaHoy = new Date();
+            const horaActual = `${fechaHoy.getHours().toString().padStart(2, '0')}:${fechaHoy.getMinutes().toString().padStart(2, '0')}`;
+            
+            const fechaAgenda = prompt('Ingrese fecha para la orden (YYYY-MM-DD):', hoy);
+            if (!fechaAgenda) return;
+            
+            const horaInicio = prompt('Ingrese hora de inicio (HH:MM):', horaActual);
+            if (!horaInicio) return;
+            
+            // Validar formato de fecha
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaAgenda)) {
+                mostrarNotificacion('Formato de fecha inválido. Use YYYY-MM-DD', 'error');
+                return;
+            }
+            
+            // Validar formato de hora
+            if (!/^\d{2}:\d{2}$/.test(horaInicio)) {
+                mostrarNotificacion('Formato de hora inválido. Use HH:MM', 'error');
+                return;
+            }
+            
+            mostrarNotificacion('Asignando orden...', 'info');
+            
+            const response = await fetch('api/asignar-orden.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orden_numero: numeroOrden,
+                    fecha_agenda: fechaAgenda,
+                    hora_inicio: horaInicio + ':00',
+                    hora_fin: null
+                }),
+                credentials: 'same-origin'
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                mostrarNotificacion('Orden asignada exitosamente', 'success');
+                await recargarDatos();
+                cerrarModal();
+            } else {
+                mostrarNotificacion(result.message || 'Error al asignar orden', 'error');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error asignando orden:', error);
+            mostrarNotificacion('Error de conexión al servidor', 'error');
+        }
+    };
+    
+    window.cerrarModal = function() {
+        try {
+            ordenSeleccionada = null;
+            const modal = document.getElementById('ordenModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        } catch (error) {
+            console.error('❌ Error cerrando modal:', error);
+        }
+    };
+    
+    // ==================== FUNCIONES AUXILIARES ====================
+    function formatFecha(fechaStr) {
+        if (!fechaStr) return 'No definida';
+        try {
+            const fecha = new Date(fechaStr);
+            return fecha.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return fechaStr;
+        }
+    }
+    
+    function escapeHTML(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    
+    function mostrarError(mensaje) {
+        if (!agendaContainer) return;
+        
+        agendaContainer.innerHTML = `
+            <div class="error-message">
+                <h2><i class="fas fa-exclamation-triangle"></i> Error</h2>
+                <p>${escapeHTML(mensaje)}</p>
+                <button onclick="recargarDatos()" class="btn-refresh">
+                    <i class="fas fa-redo"></i> Reintentar
+                </button>
+            </div>
+        `;
+    }
+    
+    function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
+        console.log(`📢 ${tipo.toUpperCase()}: ${mensaje}`);
+        
+        // Crear notificación
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${tipo}`;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: var(--shadow-md);
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+            word-wrap: break-word;
+            background: ${tipo === 'success' ? 'var(--success-color)' : 
+                        tipo === 'error' ? 'var(--error-color)' : 
+                        tipo === 'warning' ? 'var(--warning-color)' : 
+                        'var(--info-color)'};
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 18px;">
+                    ${tipo === 'success' ? '✅' : 
+                      tipo === 'error' ? '❌' : 
+                      tipo === 'warning' ? '⚠️' : 'ℹ️'}
+                </span>
+                <span>${mensaje}</span>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remover
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, duracion);
+    }
+});
+
+Script Para el Dashboard
+// dashboard-empleado.js - Con modo oscuro
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard empleado cargado - Inicializando...');
+    
+    // ============================================
+    // 1. SISTEMA DE TEMA OSCURO
+    // ============================================
+    
+    class ThemeManager {
+        constructor() {
+            this.themeToggle = document.getElementById('themeToggle');
+            this.init();
+        }
+        
+        init() {
+            if (!this.themeToggle) {
+                console.error('❌ Botón de tema no encontrado');
+                return;
+            }
+            
+            console.log('✅ Botón de tema encontrado');
+            
+            // Cargar tema inicial
+            this.loadInitialTheme();
+            
+            // Vincular eventos
+            this.bindEvents();
+            
+            console.log('✅ Sistema de tema inicializado');
+        }
+        
+        loadInitialTheme() {
+            // 1. Verificar localStorage
+            const savedTheme = localStorage.getItem('miAutomotriz-tema-empleado');
+            
+            // 2. Verificar preferencia del sistema
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // 3. Decidir tema inicial
+            let theme = 'light'; // Default
+            if (savedTheme) {
+                theme = savedTheme;
+                console.log('Usando tema guardado:', theme);
+            } else if (systemPrefersDark) {
+                theme = 'dark';
+                console.log('Usando preferencia del sistema:', theme);
+            }
+            
+            // 4. Aplicar tema
+            this.applyTheme(theme);
+            console.log(`🌓 Tema inicial aplicado: ${theme}`);
+        }
+        
+        applyTheme(theme) {
+            // Establecer atributo en HTML
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Guardar en localStorage
+            localStorage.setItem('miAutomotriz-tema-empleado', theme);
+        }
+        
+        toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            console.log(`🔄 Cambiando tema: ${currentTheme} → ${newTheme}`);
+            
+            // Aplicar nuevo tema
+            this.applyTheme(newTheme);
+            
+            // Mostrar feedback visual
+            //this.showThemeNotification(newTheme);
+            
+            return newTheme;
+        }
+        
+        showThemeNotification(theme) {
+            const message = theme === 'dark' ? 'Modo oscuro activado' : 'Modo claro activado';
+            
+            // Crear notificación
+            const notification = document.createElement('div');
+            notification.textContent = `🌓 ${message}`;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${theme === 'dark' ? '#1f2937' : '#ffffff'};
+                color: ${theme === 'dark' ? '#ffffff' : '#1f2937'};
+                padding: 10px 15px;
+                border-radius: 6px;
+                border: 1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'};
+                z-index: 9999;
+                font-size: 14px;
+                animation: fadeIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remover
+            setTimeout(() => {
+                notification.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+        
+        bindEvents() {
+            // Evento click
+            this.themeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleTheme();
+            });
+            
+            // Evento teclado para accesibilidad
+            this.themeToggle.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.toggleTheme();
+                }
+            });
+        }
+    }
+    
+    // ============================================
+    // 2. OTRAS FUNCIONALIDADES
+    // ============================================
+    
+    // Estado de la sidebar
+    let sidebarCollapsed = false;
+    let onBreak = false;
+    
+    // Actualizar fecha y hora
+    function updateDateTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        
+        const dateTimeElement = document.getElementById('currentDateTime');
+        if (dateTimeElement) {
+            dateTimeElement.textContent = now.toLocaleDateString('es-ES', options);
+        }
+        
+        // Actualizar fecha de hoy en la agenda
+        const todayOptions = { weekday: 'long', day: 'numeric', month: 'long' };
+        const todayDateElement = document.getElementById('todayDate');
+        if (todayDateElement) {
+            todayDateElement.textContent = now.toLocaleDateString('es-ES', todayOptions);
+        }
+    }
+    
+    // Toggle estado de descanso
+    function initBreakToggle() {
+        const breakToggle = document.getElementById('breakToggle');
+        if (!breakToggle) return;
+        
+        const breakText = breakToggle.querySelector('span');
+        
+        breakToggle.addEventListener('click', function() {
+            onBreak = !onBreak;
+            
+            if (onBreak) {
+                breakToggle.classList.add('on-break');
+                breakText.textContent = 'En Descanso';
+                showNotification('Has iniciado tu descanso', 'info');
+            } else {
+                breakToggle.classList.remove('on-break');
+                breakText.textContent = 'En Turno';
+                showNotification('Has finalizado tu descanso', 'success');
+            }
+        });
+    }
+    
+    // Manejar acciones de tareas
+    function initTaskActions() {
+        const pauseButtons = document.querySelectorAll('.task-btn.pause');
+        const completeButtons = document.querySelectorAll('.task-btn.complete');
+        
+        pauseButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const taskItem = this.closest('.task-item');
+                const taskName = taskItem.querySelector('h4').textContent;
+                showNotification(`Tarea pausada: ${taskName}`, 'warning');
+            });
+        });
+        
+        completeButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const taskItem = this.closest('.task-item');
+                const taskName = taskItem.querySelector('h4').textContent;
+                taskItem.style.opacity = '0.6';
+                setTimeout(() => {
+                    taskItem.remove();
+                    updateQuickStats();
+                }, 300);
+                showNotification(`Tarea completada: ${taskName}`, 'success');
+            });
+        });
+    }
+    
+    // Actualizar estadísticas rápidas
+    function updateQuickStats() {
+        const inProgress = document.querySelectorAll('.task-item').length;
+        const completedToday = 12 + (3 - inProgress); // Simulación
+        
+        const progressElement = document.querySelector('.quick-stat-card:nth-child(1) h3');
+        const completedElement = document.querySelector('.quick-stat-card:nth-child(3) h3');
+        
+        if (progressElement) progressElement.textContent = inProgress;
+        if (completedElement) completedElement.textContent = completedToday;
+    }
+    
+    // Notificaciones
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${getNotificationIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: ${getNotificationColor(type)};
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 10000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animación de entrada
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // Auto-remover después de 3 segundos
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+    
+    function getNotificationIcon(type) {
+        const icons = {
+            'success': 'check-circle',
+            'warning': 'exclamation-triangle',
+            'error': 'times-circle',
+            'info': 'info-circle'
+        };
+        return icons[type] || 'info-circle';
+    }
+    
+    function getNotificationColor(type) {
+        const colors = {
+            'success': '#10b981',
+            'warning': '#f59e0b',
+            'error': '#ef4444',
+            'info': '#3b82f6'
+        };
+        return colors[type] || '#3b82f6';
+    }
+    
+    // Agregar animaciones CSS
+    function addAnimations() {
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Toggle sidebar en móvil
+    function initSidebarToggle() {
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+            
+            // Cerrar sidebar al hacer clic fuera en móvil
+            document.addEventListener('click', (event) => {
+                if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                        sidebar.classList.remove('active');
+                    }
+                }
+            });
+        }
+    }
+    
+    // ============================================
+    // 3. INICIALIZACIÓN PRINCIPAL
+    // ============================================
+    
+    function initDashboard() {
+        console.log('🚀 Inicializando dashboard empleado...');
+        
+        // 1. Agregar animaciones CSS
+        addAnimations();
+        
+        // 2. Inicializar sistema de tema (IMPORTANTE: Primero)
+        const themeManager = new ThemeManager();
+        
+        // 3. Otras funcionalidades
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+        
+        initSidebarToggle();
+        initBreakToggle();
+        initTaskActions();
+        
+        // 4. Efecto de carga suave
+        document.body.style.opacity = '0';
+        document.body.style.transition = 'opacity 0.3s ease';
+        
+        setTimeout(() => {
+            document.body.style.opacity = '1';
+        }, 100);
+        
+        console.log('✅ Dashboard empleado completamente inicializado');
+    }
+    
+    // Iniciar todo
+    initDashboard();
+});
+Secript Para gestion Tareas
+// gestion-tareas.js - Versión simplificada
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Dashboard empleado cargado');
+    
+    // ============================================
+    // 1. SISTEMA DE TEMA OSCURO
+    // ============================================
+    
+    // Inicializar tema
+    const themeToggle = document.getElementById('themeToggle');
+    
+    if (themeToggle) {
+        // Cargar tema guardado o usar preferencia del sistema
+        const savedTheme = localStorage.getItem('miAutomotriz-tema-empleado');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        let theme = 'light';
+        if (savedTheme) {
+            theme = savedTheme;
+        } else if (systemPrefersDark) {
+            theme = 'dark';
+        }
+        
+        // Aplicar tema inicial
+        document.documentElement.setAttribute('data-theme', theme);
+        
+        // Evento para cambiar tema
+        themeToggle.addEventListener('click', function() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('miAutomotriz-tema-empleado', newTheme);
+            
+            console.log('Tema cambiado a:', newTheme);
+        });
+    }
+    
+    // ============================================
+    // 2. FUNCIONALIDADES BÁSICAS
+    // ============================================
+    
+    // Actualizar hora
+    function updateTime() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        const timeElement = document.getElementById('currentDateTime');
+        if (timeElement) {
+            timeElement.textContent = dateStr;
+        }
+    }
+    
+    // Iniciar actualización de hora
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    // Toggle sidebar móvil
+    const menuToggle = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
+    
+    // Toggle descanso
+    const breakToggle = document.getElementById('breakToggle');
+    if (breakToggle) {
+        breakToggle.addEventListener('click', function() {
+            const isOnBreak = this.classList.toggle('on-break');
+            const text = this.querySelector('span');
+            
+            if (isOnBreak) {
+                text.textContent = 'En Descanso';
+                showNotification('Has iniciado tu descanso', 'info');
+            } else {
+                text.textContent = 'Descanso';
+                showNotification('Has finalizado tu descanso', 'success');
+            }
+        });
+    }
+    
+    // Función de notificación
+    function showNotification(message, type = 'info') {
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 
+                                   type === 'warning' ? 'exclamation-triangle' : 
+                                   type === 'error' ? 'times-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Estilos básicos
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: ${type === 'success' ? '#10b981' : 
+                         type === 'warning' ? '#f59e0b' : 
+                         type === 'error' ? '#ef4444' : '#3b82f6'};
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    // Agregar animaciones CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    console.log('✅ Dashboard inicializado correctamente');
+});
+Para que el empleado vea las ordenes de trabajo (Tareas) que tiene asignadas,
+
+<?php
+// api/get-detalle-orden.php
+session_start();
+
+if (!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'No autorizado']);
+    exit();
+}
+
+$rut_usuario = $_SESSION['rut'] ?? '';
+
+require_once __DIR__ . '/../config/database.php';
+
+try {
+    $pdo = getDB();
+} catch (Exception $e) {
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Error de conexión: ' . $e->getMessage()]);
+    exit();
+}
+
+$numero_orden = $_GET['numero'] ?? 0;
+
+if (!$numero_orden) {
+    echo json_encode(['success' => false, 'message' => 'Número de orden requerido']);
+    exit();
+}
+
+header('Content-Type: application/json');
+
+try {
+    // Consulta para obtener detalles completos de la orden
+    $query = "
+        SELECT 
+            ot.Numero,
+            ot.Fecha,
+            ot.Descripcion,
+            ot.Vehiculo_ID,
+            ot.Estado,
+            v.Patente,
+            p.Nombre || ' ' || p.Apellido as Cliente_Nombre,
+            ma.Nombre as marca,
+            mo.Nombre as modelo,
+            ae.Fecha_Agenda,
+            ae.Hora_Inicio,
+            ae.Hora_Fin,
+            STRING_AGG(a.Descripcion, ', ') as averias
+            
+        FROM Orden_Trabajo ot
+        
+        JOIN Vehiculo v ON v.Patente = ot.Vehiculo_ID
+        JOIN Persona p ON p.RUT = v.Persona_RUT
+        LEFT JOIN Tener t ON t.Vehiculo_ID = v.Patente
+        LEFT JOIN Modelo mo ON mo.Codigo = t.Modelo_ID
+        LEFT JOIN Marca ma ON ma.Codigo = mo.Marca_ID
+        LEFT JOIN Agenda_Empleado ae ON ae.Orden_Trabajo_Numero = ot.Numero
+        LEFT JOIN Orden_Averia oa ON oa.Orden_Trabajo_Numero = ot.Numero
+        LEFT JOIN Averia a ON a.Codigo = oa.Averia_ID
+        
+        WHERE ot.Numero = :numero_orden
+        
+        GROUP BY ot.Numero, ot.Fecha, ot.Descripcion, ot.Vehiculo_ID, 
+                 ot.Estado, v.Patente, p.Nombre, p.Apellido, 
+                 ma.Nombre, mo.Nombre, ae.Fecha_Agenda, 
+                 ae.Hora_Inicio, ae.Hora_Fin
+    ";
+    
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([':numero_orden' => $numero_orden]);
+    $orden = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$orden) {
+        echo json_encode(['success' => false, 'message' => 'Orden no encontrada']);
+        exit();
+    }
+    
+    // Obtener repuestos utilizados
+    $query_repuestos = "
+        SELECT 
+            p.Codigo,
+            p.Nombre,
+            hr.Cantidad_Instalada,
+            hr.Costo_Unitario
+        FROM Historial_Repuestos_Vehiculo hr
+        JOIN Pieza p ON p.Codigo = hr.Repuesto_Codigo
+        WHERE hr.Orden_Trabajo_Numero = :numero_orden
+    ";
+    
+    $stmt_repuestos = $pdo->prepare($query_repuestos);
+    $stmt_repuestos->execute([':numero_orden' => $numero_orden]);
+    $repuestos = $stmt_repuestos->fetchAll(PDO::FETCH_ASSOC);
+    
+    echo json_encode([
+        'success' => true,
+        'orden' => $orden,
+        'repuestos' => $repuestos
+    ], JSON_UNESCAPED_UNICODE);
+    
+} catch (Exception $e) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error al obtener detalles: ' . $e->getMessage()
+    ]);
+}
+?>

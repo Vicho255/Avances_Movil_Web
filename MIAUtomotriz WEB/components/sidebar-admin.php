@@ -53,20 +53,20 @@ $tipo_usuario = $_SESSION['tipo_persona'] ?? 'Administrador';
                 <span>Vehículos</span>
             </a>
         </li>
-        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'gestion-ordenes.php' ? 'active' : ''; ?>">
-            <a href="gestion-ordenes.php">
+        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'gestion-servicios.php' ? 'active' : ''; ?>">
+            <a href="gestion-servicios.php">
                 <i class="fas fa-tools"></i>
                 <span>Servicios</span>
             </a>
         </li>
-        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'facturacion.php' ? 'active' : ''; ?>">
-            <a href="facturacion.php">
+        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'gestion-facturas.php' ? 'active' : ''; ?>">
+            <a href="gestion-facturas.php">
                 <i class="fas fa-file-invoice-dollar"></i>
                 <span>Facturación</span>
             </a>
         </li>
-        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'cotizacion.php' ? 'active' : ''; ?>">
-            <a href="cotizacion.php">
+        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'gestion-cotizaciones.php' ? 'active' : ''; ?>">
+            <a href="gestion-cotizaciones.php">
                 <i class="fas fa-file-alt"></i>
                 <span>Cotización</span>
             </a>
@@ -77,8 +77,8 @@ $tipo_usuario = $_SESSION['tipo_persona'] ?? 'Administrador';
                 <span>Reportes</span>
             </a>
         </li>
-        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'inventario.php' ? 'active' : ''; ?>">
-            <a href="inventario.php">
+        <li class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'gestion-inventario.php' ? 'active' : ''; ?>">
+            <a href="gestion-inventario.php">
                 <i class="fas fa-boxes"></i>
                 <span>Inventario</span>
             </a>

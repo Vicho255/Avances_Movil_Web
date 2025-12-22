@@ -83,6 +83,21 @@
     overflow: hidden;
 }
 
+.card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.view-all {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
 /* Tasks List */
 .tasks-list {
     padding: 0.5rem 0;

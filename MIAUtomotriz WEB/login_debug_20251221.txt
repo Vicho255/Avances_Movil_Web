@@ -1,0 +1,230 @@
+[14:20:46] Script iniciado
+[14:20:46] No es POST
+[14:21:04] Script iniciado
+[14:21:04] POST recibido
+[14:21:04] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[14:21:04] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[14:21:04] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[14:21:04] Filas encontradas: 1
+[14:21:04] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[14:21:04] Sesión configurada
+[14:21:04] Redirigiendo ADMIN
+[14:22:57] Script iniciado
+[14:22:57] No es POST
+[14:23:07] Script iniciado
+[14:23:07] POST recibido
+[14:23:07] POST data: Array
+(
+    [username] => Maria Lopez
+    [password] => 98765432-1
+)
+
+[14:23:07] Usuario: Maria Lopez, Contraseña: 98765432-1
+[14:23:07] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[14:23:07] Filas encontradas: 1
+[14:23:07] Datos usuario: Array
+(
+    [rut] => 98765432-1
+    [nombre] => Maria
+    [tipo_persona] => Empleado
+)
+
+[14:23:07] Sesión configurada
+[14:23:07] Redirigiendo EMPLEADO
+[14:48:14] Script iniciado
+[14:48:14] No es POST
+[14:48:20] Script iniciado
+[14:48:20] POST recibido
+[14:48:20] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[14:48:20] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[14:48:20] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[14:48:20] Filas encontradas: 1
+[14:48:20] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[14:48:20] Sesión configurada
+[14:48:20] Redirigiendo ADMIN
+[15:24:07] Script iniciado
+[15:24:07] No es POST
+[15:24:13] Script iniciado
+[15:24:13] POST recibido
+[15:24:13] POST data: Array
+(
+    [username] => Maria Lopez
+    [password] => 98765432-1
+)
+
+[15:24:13] Usuario: Maria Lopez, Contraseña: 98765432-1
+[15:24:13] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[15:24:13] Filas encontradas: 1
+[15:24:13] Datos usuario: Array
+(
+    [rut] => 98765432-1
+    [nombre] => Maria
+    [tipo_persona] => Empleado
+)
+
+[15:24:13] Sesión configurada
+[15:24:13] Redirigiendo EMPLEADO
+[15:24:28] Script iniciado
+[15:24:28] No es POST
+[15:24:38] Script iniciado
+[15:24:38] POST recibido
+[15:24:38] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[15:24:38] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[15:24:38] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[15:24:38] Filas encontradas: 1
+[15:24:38] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[15:24:38] Sesión configurada
+[15:24:38] Redirigiendo ADMIN
+[15:39:14] Script iniciado
+[15:39:14] No es POST
+[15:39:40] Script iniciado
+[15:39:40] POST recibido
+[15:39:40] POST data: Array
+(
+    [username] => Ana Técnica
+    [password] => 55555555-5
+)
+
+[15:39:40] Usuario: Ana Técnica, Contraseña: 55555555-5
+[15:39:40] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[15:39:40] Filas encontradas: 1
+[15:39:40] Datos usuario: Array
+(
+    [rut] => 55555555-5
+    [nombre] => Ana
+    [tipo_persona] => Empleado
+)
+
+[15:39:40] Sesión configurada
+[15:39:40] Redirigiendo EMPLEADO
+[15:40:41] Script iniciado
+[15:40:41] No es POST
+[15:40:50] Script iniciado
+[15:40:50] POST recibido
+[15:40:50] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[15:40:50] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[15:40:50] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[15:40:50] Filas encontradas: 1
+[15:40:50] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[15:40:50] Sesión configurada
+[15:40:50] Redirigiendo ADMIN
+[19:57:17] Script iniciado
+[19:57:17] No es POST
+[19:58:22] Script iniciado
+[19:58:22] No es POST
+[19:58:52] Script iniciado
+[19:58:52] No es POST
+[19:58:58] Script iniciado
+[19:58:58] No es POST
+[20:01:29] Script iniciado
+[20:01:29] No es POST
+[20:01:56] Script iniciado
+[20:01:56] POST recibido
+[20:01:56] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[20:01:56] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[20:01:56] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[20:01:56] Filas encontradas: 1
+[20:01:56] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[20:01:56] Sesión configurada
+[20:01:56] Redirigiendo ADMIN
+[20:14:20] Script iniciado
+[20:14:20] No es POST
+[20:15:02] Script iniciado
+[20:15:02] POST recibido
+[20:15:02] POST data: Array
+(
+    [username] => Pedro Mecánico
+    [password] => 44444444-4
+)
+
+[20:15:02] Usuario: Pedro Mecánico, Contraseña: 44444444-4
+[20:15:02] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[20:15:03] Filas encontradas: 1
+[20:15:03] Datos usuario: Array
+(
+    [rut] => 44444444-4
+    [nombre] => Pedro
+    [tipo_persona] => Empleado
+)
+
+[20:15:03] Sesión configurada
+[20:15:03] Redirigiendo EMPLEADO
+[20:17:20] Script iniciado
+[20:17:20] No es POST
+[20:20:04] Script iniciado
+[20:20:04] POST recibido
+[20:20:04] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[20:20:04] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[20:20:04] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[20:20:04] Filas encontradas: 1
+[20:20:04] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[20:20:04] Sesión configurada
+[20:20:04] Redirigiendo ADMIN
+[20:29:13] Script iniciado
+[20:29:13] No es POST

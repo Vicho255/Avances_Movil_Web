@@ -1,29 +1,26 @@
 <?php
+// gestion-tareas.php - Archivo principal actualizado
 session_start();
 
-// VERIFICACIÓN DE SESIÓN
 if(!isset($_SESSION['autenticado']) || $_SESSION['autenticado'] !== TRUE){
     header('Location: login.php');
     exit();
 }
 
-// Verificar que sea empleado
 if($_SESSION['tipo_persona'] !== 'Empleado'){
     header('Location: login.php');
     exit();
 }
 
-// Obtener datos del usuario de la sesión
 $nombre_usuario = $_SESSION['usuario'] ?? 'Empleado';
 $rut_usuario = $_SESSION['rut'] ?? '';
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Empleado - MiAutomotriz</title>
+    <title>Gestión de Tareas - Empleado - MiAutomotriz</title>
     <link rel="stylesheet" href="styles/layout.css">
     <link rel="stylesheet" href="styles/gestion-tareas.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -41,8 +38,14 @@ $rut_usuario = $_SESSION['rut'] ?? '';
         <div class="dashboard-tareas">
             <!-- Encabezado -->
             <div class="dashboard-header">
-                <h1><i class="fas fa-tasks"></i> Gestión de Tareas</h1>
-                <p>Bienvenido, <?php echo htmlspecialchars($nombre_usuario); ?>. Aquí puedes gestionar tus tareas asignadas.</p>
+                <div class="dashboard-actions">
+                    <button class="btn-refresh" onclick="location.reload()">
+                        <i class="fas fa-redo"></i> Actualizar
+                    </button>
+                    <button class="btn-export" onclick="exportarReporteMensual()">
+                        <i class="fas fa-download"></i> Exportar Reporte
+                    </button>
+                </div>
             </div>
                 
             <!-- Estadísticas -->
@@ -90,70 +93,82 @@ $rut_usuario = $_SESSION['rut'] ?? '';
             
             <!-- Sección Principal de Tareas -->
             <div class="tasks-section">
-                <!-- Tareas en Progreso -->
+                <!-- Tareas Activas -->
                 <div class="tasks-card">
                     <div class="card-header">
-                        <h3><i class="fas fa-spinner"></i> Tareas en Progreso</h3>
-                        <button class="view-all" onclick="verTodasTareas()">Ver Todas</button>
+                        <h3><i class="fas fa-spinner"></i> Tareas Activas</h3>
+                        <div class="card-actions">
+                            <select id="filtro-estado" onchange="filtrarPorEstado(this.value)" class="select-estado">
+                                <option value="todos">Todas</option>
+                                <option value="urgente">Urgentes</option>
+                                <option value="en-proceso">En Proceso</option>
+                                <option value="pendiente">Pendientes</option>
+                            </select>
+                            <button class="view-all" onclick="verTodasTareas()">Ver Todas</button>
+                        </div>
                     </div>
                     <div class="tasks-list" id="tareas-progreso-container">
-                        <!-- Las tareas en progreso se cargarán aquí -->
-                        <div class="empty-state" id="empty-progress">
-                            <i class="fas fa-clipboard-list"></i>
-                            <p>No hay tareas en progreso</p>
+                        <!-- Las tareas se cargarán dinámicamente -->
+                        <div class="loading-tasks">
+                            <div class="loading-spinner"></div>
+                            <p>Cargando tareas...</p>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Sidebar de Filtros e Información -->
+                <!-- Sidebar de Información -->
                 <div class="sidebar-tasks">
-                    <!-- Filtros -->
+                    <!-- Información del Empleado -->
                     <div class="sidebar-card">
-                        <h4><i class="fas fa-filter"></i> Filtros</h4>
-                        <div class="filter-options">
-                            <button class="filter-btn active" onclick="filtrarTareas('todas')">
-                                <i class="fas fa-list"></i> Todas las tareas
-                            </button>
-                            <button class="filter-btn" onclick="filtrarTareas('urgentes')">
-                                <i class="fas fa-exclamation-circle"></i> Urgentes
-                            </button>
-                            <button class="filter-btn" onclick="filtrarTareas('hoy')">
-                                <i class="fas fa-calendar-day"></i> Para hoy
-                            </button>
-                            <button class="filter-btn" onclick="filtrarTareas('completadas')">
-                                <i class="fas fa-check-circle"></i> Completadas
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Información Rápida -->
-                    <div class="sidebar-card">
-                        <h4><i class="fas fa-info-circle"></i> Información</h4>
-                        <div style="font-size: 0.9rem; color: #6c757d;">
-                            <p><i class="fas fa-user" style="color: #3498db; width: 20px;"></i> 
-                               <strong>Empleado:</strong> <?php echo htmlspecialchars($nombre_usuario); ?></p>
-                            <p><i class="fas fa-id-card" style="color: #3498db; width: 20px;"></i> 
-                               <strong>RUT:</strong> <?php echo htmlspecialchars($rut_usuario); ?></p>
-                            <p><i class="fas fa-calendar" style="color: #3498db; width: 20px;"></i> 
-                               <strong>Fecha:</strong> <span id="current-date"></span></p>
-                            <p><i class="fas fa-clock" style="color: #3498db; width: 20px;"></i> 
-                               <strong>Hora:</strong> <span id="current-time"></span></p>
+                        <h4><i class="fas fa-user"></i> Mi Información</h4>
+                        <div class="empleado-info">
+                            <div class="info-item">
+                                <span class="info-label">Nombre:</span>
+                                <span class="info-value"><?php echo htmlspecialchars($nombre_usuario); ?></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">RUT:</span>
+                                <span class="info-value"><?php echo htmlspecialchars($rut_usuario); ?></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Fecha:</span>
+                                <span class="info-value" id="current-date"></span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Hora:</span>
+                                <span class="info-value" id="current-time"></span>
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Acciones Rápidas -->
                     <div class="sidebar-card">
                         <h4><i class="fas fa-bolt"></i> Acciones Rápidas</h4>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <button class="filter-btn" onclick="marcarTodasCompletadas()">
-                                <i class="fas fa-check-double"></i> Marcar todas como completadas
+                        <div class="quick-actions">
+                            <button class="action-btn" onclick="marcarTodasCompletadas()">
+                                <i class="fas fa-check-double"></i>
+                                <span>Marcar todas completadas</span>
                             </button>
-                            <button class="filter-btn" onclick="exportarReporte()">
-                                <i class="fas fa-download"></i> Exportar reporte
+                            <button class="action-btn" onclick="solicitarNuevasTareas()">
+                                <i class="fas fa-plus-circle"></i>
+                                <span>Solicitar más tareas</span>
                             </button>
-                            <button class="filter-btn" onclick="solicitarNuevasTareas()">
-                                <i class="fas fa-plus-circle"></i> Solicitar nuevas tareas
+                            <button class="action-btn" onclick="verHistorialCompletadas()">
+                                <i class="fas fa-history"></i>
+                                <span>Ver historial</span>
                             </button>
+                            <button class="action-btn" onclick="exportarReporte()">
+                                <i class="fas fa-file-export"></i>
+                                <span>Exportar reporte</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Próximas Tareas -->
+                    <div class="sidebar-card">
+                        <h4><i class="fas fa-calendar-alt"></i> Próximas</h4>
+                        <div id="proximas-tareas">
+                            <!-- Cargado dinámicamente -->
                         </div>
                     </div>
                 </div>
@@ -162,15 +177,11 @@ $rut_usuario = $_SESSION['rut'] ?? '';
             <!-- Tareas Completadas -->
             <div class="tasks-card completed-tasks">
                 <div class="card-header">
-                    <h3><i class="fas fa-check-circle"></i> Tareas Completadas Recientemente</h3>
-                    <button class="view-all" onclick="verHistorialCompletadas()">Ver Historial</button>
+                    <h3><i class="fas fa-check-circle"></i> Tareas Completadas Hoy</h3>
+                    <button class="view-all" onclick="verHistorialCompletadas()">Ver Historial Completo</button>
                 </div>
                 <div class="tasks-list" id="tareas-completadas-container">
-                    <!-- Las tareas completadas se cargarán aquí -->
-                    <div class="empty-state" id="empty-completed">
-                        <i class="fas fa-clipboard-check"></i>
-                        <p>No hay tareas completadas recientemente</p>
-                    </div>
+                    <!-- Las tareas completadas se cargarán dinámicamente -->
                 </div>
             </div>
         </div>
@@ -178,25 +189,28 @@ $rut_usuario = $_SESSION['rut'] ?? '';
 
     <!-- Modal para Detalles de Tarea -->
     <div id="task-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 id="modal-title">Detalles de Tarea</h3>
-                <span class="close-modal" onclick="cerrarModal()">&times;</span>
-            </div>
-            <div class="modal-body" id="modal-body">
-                <!-- Contenido dinámico -->
-            </div>
+        <div class="modal-content">
+            <!-- El contenido del modal se cargará dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Modal para Historial -->
+    <div id="historial-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <!-- Contenido del historial se cargará dinámicamente -->
         </div>
     </div>
 
     <script src="scripts/gestion-tareas.js"></script>
     <script>
-        // Mostrar información de sesión en consola para debug
-        console.log('Sesión activa empleado:', {
-            usuario: '<?php echo $_SESSION['usuario'] ?? ''; ?>',
-            tipo: '<?php echo $_SESSION['tipo_persona'] ?? ''; ?>',
-            rut: '<?php echo $_SESSION['rut'] ?? ''; ?>'
-        });
+        // Configuración global
+        const CONFIG = {
+            empleado_rut: '<?php echo $rut_usuario; ?>',
+            empleado_nombre: '<?php echo $nombre_usuario; ?>',
+            api_url: 'api/ordenes-empleado.php'
+        };
+        
+        console.log('Configuración empleado:', CONFIG);
     </script>
-
 </body>
+</html>

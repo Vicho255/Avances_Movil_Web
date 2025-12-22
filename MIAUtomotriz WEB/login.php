@@ -178,18 +178,11 @@ ob_end_flush(); // Enviar buffer
 
             <button type="submit" class="ingreso-button">Ingresar</button>
         </form>
-        
-        <div style="margin-top: 20px; padding: 15px; background: #e8f4fd; border-radius: 5px; font-size: 14px;">
-            <strong>📋 Credenciales de prueba:</strong><br>
-            • <strong>Administrador:</strong> Admin Principal / 12345678-9<br>
-            • <strong>Empleado:</strong> Juan Pérez / 87654321-5<br>
-            • <strong>Empleado:</strong> María González / 11222333-4
-        </div>
     </div>
 
-    <div class="common-link" id="btnCli">
+    <!-- <div class="common-link" id="btnCli">
         <a href="setup_database.php">Configurar Base de Datos</a>
-    </div>
+    </div> -->
 
     <div class="debug-info">
         <strong>Debug:</strong><br>

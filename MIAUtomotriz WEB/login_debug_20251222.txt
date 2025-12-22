@@ -1,0 +1,22 @@
+[01:04:39] Script iniciado
+[01:04:39] No es POST
+[01:04:45] Script iniciado
+[01:04:45] POST recibido
+[01:04:45] POST data: Array
+(
+    [username] => Carlos Sanchez
+    [password] => 11223344-5
+)
+
+[01:04:45] Usuario: Carlos Sanchez, Contraseña: 11223344-5
+[01:04:45] Query: SELECT * FROM validacion_credenciales(:usuario, :contrasena)
+[01:04:46] Filas encontradas: 1
+[01:04:46] Datos usuario: Array
+(
+    [rut] => 11223344-5
+    [nombre] => Carlos
+    [tipo_persona] => Administrador
+)
+
+[01:04:46] Sesión configurada
+[01:04:46] Redirigiendo ADMIN

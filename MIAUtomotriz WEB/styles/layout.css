@@ -40,6 +40,12 @@
     /* Layout */
     --sidebar-width: 280px;
     --header-height: 70px;
+
+    /*Card backgrounds*/
+    --card-bg: #ffffff;
+    --input-bg: #f9f9f9;
+    --item-bg: #f1f1f1;
+    --info-bg: #e9f5ff;
 }
 
 /* Variables para modo oscuro */
@@ -63,6 +69,12 @@
     --border-color: #4b5563;
     --border-light: #374151;
     
+    /*Card backgrounds oscuro*/
+    --card-bg: #1f2937;
+    --input-bg: #374151;
+    --item-bg: #374151;
+    --info-bg: #1e293b;
+
     /* Estados (más brillantes en oscuro) */
     --success-color: #34d399;
     --warning-color: #fbbf24;

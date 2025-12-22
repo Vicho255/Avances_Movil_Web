@@ -1,13 +1,23 @@
-// dashboard-admin.js - Versión simplificada sin ThemeManager propio
+// dashboard-admin.js - Versión con manejo mejorado de errores
 
 // Variables globales para gráficos
 let revenueChart, clientsChart, repuestosChart, averiasChart;
 
+// Función para formatear números
+function formatNumber(num) {
+    return num.toLocaleString('es-CL');
+}
+
+// Función para formatear moneda
+function formatCurrency(num) {
+    return '$' + num.toLocaleString('es-CL');
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ Dashboard admin cargado - Versión simplificada');
+    console.log('✅ Dashboard admin cargado - Versión con datos reales');
     
     // ============================================
-    // 1. FUNCIONES DE GRÁFICOS (sin cambios)
+    // 1. FUNCIONES DE GRÁFICOS
     // ============================================
     
     function getThemeColors() {
@@ -22,21 +32,57 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
-    function initRevenueChart() {
+    async function fetchData(endpoint) {
+        try {
+            const response = await fetch(endpoint);
+            
+            // Verificar si la respuesta es válida
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('La respuesta no es JSON');
+            }
+            
+            const data = await response.json();
+            
+            // Verificar si hay error en los datos
+            if (data.error) {
+                console.error(`Error del servidor: ${data.error}`);
+                return null;
+            }
+            
+            return data;
+        } catch (error) {
+            console.error(`Error en fetch: ${error.message}`);
+            return null;
+        }
+    }
+    
+    async function initRevenueChart() {
         const ctx = document.getElementById('revenueChart');
         if (!ctx) return;
         
+        const data = await fetchData('api/dashboard-data.php?tipo=ingresos_mensuales');
         const colors = getThemeColors();
         
         if (revenueChart) revenueChart.destroy();
         
+        // Usar datos de la API o valores predeterminados
+        const chartData = data || {
+            etiquetas: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+            datos: [35000, 42000, 38000, 45000, 41000, 45670, 48000, 50000, 52000, 60000, 58000, 62000]
+        };
+        
         revenueChart = new Chart(ctx.getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                labels: chartData.etiquetas,
                 datasets: [{
                     label: 'Ingresos ($)',
-                    data: [35000, 42000, 38000, 45000, 41000, 45670, 48000, 50000, 52000, 60000, 58000, 62000],
+                    data: chartData.datos,
                     borderColor: colors.primaryColor,
                     backgroundColor: colors.primaryLight,
                     borderWidth: 2,
@@ -46,12 +92,26 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatCurrency(context.parsed.y);
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: { color: colors.gridColor },
-                        ticks: { color: colors.textColor }
+                        ticks: { 
+                            color: colors.textColor,
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
                     },
                     x: {
                         grid: { display: false },
@@ -62,21 +122,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function initRevenueChartCLI() {
+    async function initRevenueChartCLI() {
         const ctx = document.getElementById('revenueChartCLI');
         if (!ctx) return;
         
+        const data = await fetchData('api/dashboard-data.php?tipo=clientes_nuevos');
         const colors = getThemeColors();
         
         if (clientsChart) clientsChart.destroy();
         
+        // Usar datos de la API o valores predeterminados
+        const chartData = data || {
+            etiquetas: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+            datos: [5, 10, 13, 7, 16, 8, 17]
+        };
+        
         clientsChart = new Chart(ctx.getContext('2d'), {
             type: 'line',
             data: {
-                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                labels: chartData.etiquetas,
                 datasets: [{
                     label: 'Clientes Nuevos',
-                    data: [5, 10, 13, 7, 16, 8, 17],
+                    data: chartData.datos,
                     borderColor: colors.primaryColor,
                     backgroundColor: colors.primaryLight,
                     borderWidth: 2,
@@ -87,12 +154,24 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.parsed.y} clientes`;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         grid: { color: colors.gridColor },
-                        ticks: { color: colors.textColor }
+                        ticks: { 
+                            color: colors.textColor,
+                            precision: 0
+                        }
                     },
                     x: {
                         grid: { display: false },
@@ -103,24 +182,31 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function initRevenueChartERep() {
+    async function initRevenueChartERep() {
         const ctx = document.getElementById('revenueChartRep');
         if (!ctx) return;
         
+        const data = await fetchData('api/dashboard-data.php?tipo=repuestos_mas_usados');
         const colors = getThemeColors();
         
         if (repuestosChart) repuestosChart.destroy();
         
+        // Usar datos de la API o valores predeterminados
+        const chartData = data || {
+            etiquetas: ['Neumático', 'Batería', 'Filtro Aceite', 'Pastillas Freno', 'Aceite Motor', 'Otros'],
+            datos: [40, 25, 15, 10, 5, 5],
+            colores: ['#FF6384', '#36A2EB', '#4BC0C0', '#FFCE56', '#9966FF', '#FF9F40']
+        };
+        
         repuestosChart = new Chart(ctx.getContext('2d'), {
             type: 'pie',
             data: {
-                labels: ['Neumático', 'Batería', 'Filtro Aceite', 'Pastillas Freno', 'Aceite Motor', 'Otros'],
+                labels: chartData.etiquetas,
                 datasets: [{
-                    data: [40, 25, 15, 10, 5, 5],
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#4BC0C0', 
-                        '#FFCE56', '#9966FF', '#FF9F40'
-                    ]
+                    data: chartData.datos,
+                    backgroundColor: chartData.colores,
+                    borderWidth: 1,
+                    borderColor: colors.isDark ? '#374151' : '#e5e7eb'
                 }]
             },
             options: {
@@ -128,31 +214,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        labels: { color: colors.textColor }
+                        position: 'right',
+                        labels: { 
+                            color: colors.textColor,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} unidades (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
         });
     }
     
-    function initRevenueChartEFall() {
+    async function initRevenueChartEFall() {
         const ctx = document.getElementById('revenueChartFall');
         if (!ctx) return;
         
+        const data = await fetchData('api/dashboard-data.php?tipo=averias_mas_comunes');
         const colors = getThemeColors();
         
         if (averiasChart) averiasChart.destroy();
         
+        // Usar datos de la API o valores predeterminados
+        const chartData = data || {
+            etiquetas: ['Batería', 'Frenos', 'Llanta', 'Vidrio', 'Motor', 'Otros'],
+            datos: [30, 25, 20, 15, 5, 5],
+            colores: ['#FF6384', '#36A2EB', '#4BC0C0', '#FFCE56', '#9966FF', '#FF9F40']
+        };
+        
         averiasChart = new Chart(ctx.getContext('2d'), {
             type: 'pie',
             data: {
-                labels: ['Batería', 'Frenos', 'Llanta', 'Vidrio', 'Motor', 'Otros'],
+                labels: chartData.etiquetas,
                 datasets: [{
-                    data: [30, 25, 20, 15, 5, 5],
-                    backgroundColor: [
-                        '#FF6384', '#36A2EB', '#4BC0C0', 
-                        '#FFCE56', '#9966FF', '#FF9F40'
-                    ]
+                    data: chartData.datos,
+                    backgroundColor: chartData.colores,
+                    borderWidth: 1,
+                    borderColor: colors.isDark ? '#374151' : '#e5e7eb'
                 }]
             },
             options: {
@@ -160,7 +271,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        labels: { color: colors.textColor }
+                        position: 'right',
+                        labels: { 
+                            color: colors.textColor,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} casos (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
@@ -217,25 +346,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    function initDynamicStats() {
-        setTimeout(() => {
-            const stats = {
-                clientes: '1,248',
-                vehiculos: '856',
-                servicios: '324',
-                ingresos: '$45,670'
-            };
-            
-            const updateElement = (id, value) => {
-                const element = document.getElementById(id);
-                if (element) element.textContent = value;
-            };
-            
-            updateElement('totalClientes', stats.clientes);
-            updateElement('totalVehiculos', stats.vehiculos);
-            updateElement('totalServicios', stats.servicios);
-            updateElement('totalIngresos', stats.ingresos);
-        }, 1000);
+    async function initDynamicStats() {
+        const data = await fetchData('api/dashboard-data.php?tipo=estadisticas_generales');
+        
+        // Usar datos de la API o valores predeterminados
+        const stats = data || {
+            clientes: 1248,
+            vehiculos: 856,
+            servicios_hoy: 324,
+            ingresos_mes: 45670
+        };
+        
+        const updateElement = (id, value, isCurrency = false) => {
+            const element = document.getElementById(id);
+            if (element) {
+                if (isCurrency) {
+                    element.textContent = formatCurrency(value);
+                } else {
+                    element.textContent = formatNumber(value);
+                }
+            }
+        };
+        
+        updateElement('totalClientes', stats.clientes);
+        updateElement('totalVehiculos', stats.vehiculos);
+        updateElement('totalServicios', stats.servicios_hoy);
+        updateElement('totalIngresos', stats.ingresos_mes, true);
     }
     
     // ============================================
@@ -259,23 +395,60 @@ document.addEventListener('DOMContentLoaded', function() {
     // 4. INICIALIZACIÓN PRINCIPAL
     // ============================================
     
-    function initDashboard() {
+    async function initDashboard() {
         console.log('🚀 Inicializando dashboard admin...');
         
-        // 1. Inicializar gráficos con tema actual
-        applyCurrentThemeToCharts();
+        // Mostrar indicador de carga
+        showLoadingIndicators();
         
-        // 2. Otras funcionalidades
+        // 1. Otras funcionalidades
         updateDateTime();
         setInterval(updateDateTime, 1000);
         
         initSidebarToggle();
-        initDynamicStats();
         
-        // 3. Hacer funciones disponibles globalmente
+        // 2. Cargar estadísticas y gráficos
+        await initDynamicStats();
+        await applyCurrentThemeToCharts();
+        
+        // 3. Ocultar indicador de carga
+        hideLoadingIndicators();
+        
+        // 4. Hacer funciones disponibles globalmente
         window.updateChartsForTheme = updateChartsForTheme;
         
+        // 5. Configurar filtros de gráficos
+        setupChartFilters();
+        
         console.log('✅ Dashboard admin completamente inicializado');
+    }
+    
+    // Mostrar indicadores de carga
+    function showLoadingIndicators() {
+        const statCards = document.querySelectorAll('.stat-card h3');
+        statCards.forEach(card => {
+            if (card.textContent === 'Cargando...') {
+                card.innerHTML = '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+            }
+        });
+    }
+    
+    // Ocultar indicadores de carga
+    function hideLoadingIndicators() {
+        const loadingDots = document.querySelectorAll('.loading-dots');
+        loadingDots.forEach(dot => dot.remove());
+    }
+    
+    // Configurar filtros de gráficos
+    function setupChartFilters() {
+        const filters = document.querySelectorAll('.chart-filter');
+        filters.forEach(filter => {
+            filter.addEventListener('change', function() {
+                const chartType = this.closest('.chart-card, .client-card').querySelector('h3').textContent;
+                console.log(`Filtro cambiado para: ${chartType} - Valor: ${this.value}`);
+                // Aquí puedes implementar la lógica para recargar datos según el filtro
+            });
+        });
     }
     
     // Iniciar todo
