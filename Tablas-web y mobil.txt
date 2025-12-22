@@ -133,7 +133,13 @@ CREATE TABLE Tener (
 	FOREIGN KEY (Modelo_ID) REFERENCES Modelo(Codigo) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE TYPE Estado_enum AS ENUM ('Pendiente', 'En Proceso', 'Completada', 'Cancelada');
+CREATE TYPE estado_enum AS ENUM (
+    'Urgente',
+    'Pendiente',
+    'En Proceso',
+    'Completada',
+    'Cancelada'
+);
 
 -- Tabla de Órdenes de Trabajo
 CREATE TABLE Orden_Trabajo (
@@ -141,7 +147,7 @@ CREATE TABLE Orden_Trabajo (
     Fecha DATE DEFAULT CURRENT_DATE,
 	Descripcion VARCHAR(255),
     Vehiculo_ID VARCHAR(7) NOT NULL,
-    Estado Estado_enum DEFAULT 'Pendiente',
+    Estado estado_enum DEFAULT 'Pendiente',
     FOREIGN KEY (Vehiculo_ID) REFERENCES Vehiculo(Patente) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -356,6 +362,55 @@ CREATE TABLE Turnos_empleado (
     CHECK (Hora_Fin > Hora_Inicio)
 );
 
+-- Tabla para historial de estados
+-- Tabla para el historial de tareas
+CREATE TABLE IF NOT EXISTS historial_tareas (
+    id SERIAL PRIMARY KEY,
+    orden_trabajo_numero INTEGER REFERENCES orden_trabajo(numero),
+    empleado_rut VARCHAR(12) REFERENCES persona(rut),
+    estado_anterior VARCHAR(50),
+    estado_nuevo VARCHAR(50),
+    observaciones TEXT,
+    fecha_cambio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla para el historial de completación
+CREATE TABLE IF NOT EXISTS historial_completacion_tareas (
+    id SERIAL PRIMARY KEY,
+    orden_trabajo_numero INTEGER REFERENCES orden_trabajo(numero),
+    empleado_rut VARCHAR(12) REFERENCES persona(rut),
+    fecha_completacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tiempo_empleado VARCHAR(50),
+    observaciones TEXT
+);
+
+-- Tabla para agenda de empleados (si no existe)
+CREATE TABLE IF NOT EXISTS agenda_empleado (
+    id SERIAL PRIMARY KEY,
+    orden_trabajo_numero INTEGER REFERENCES orden_trabajo(numero),
+    empleado_rut VARCHAR(12) REFERENCES persona(rut),
+    fecha_agenda DATE,
+    hora_inicio TIME,
+    hora_fin TIME,
+    tiempo_real VARCHAR(50),
+    observaciones TEXT,
+    UNIQUE(orden_trabajo_numero)
+);
+
+-- Solo crea la tabla de historial si no existe
+CREATE TABLE IF NOT EXISTS historial_inventario (
+    id SERIAL PRIMARY KEY,
+    repuesto_codigo VARCHAR(40) NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
+    cantidad INT NOT NULL,
+    stock_anterior INT NOT NULL,
+    stock_nuevo INT NOT NULL,
+    motivo TEXT,
+    usuario VARCHAR(100),
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (repuesto_codigo) REFERENCES Pieza(codigo) ON DELETE CASCADE
+);
+
 SELECT current_database();
 SELECT current_user;
 
@@ -404,4 +459,3 @@ INSERT INTO tener (Vehiculo_ID, tipo_vehiculo_id, Modelo_ID) VALUES
 ('ABCD12', 1, 1),
 ('EFGH34', 2, 2),
 ('IJKL56', 3, 3);
-
