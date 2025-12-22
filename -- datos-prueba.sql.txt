@@ -1,0 +1,196 @@
+-- datos-prueba.sql
+-- Insertar datos de prueba para el sistema de órdenes
+
+-- 1. Insertar direcciones
+INSERT INTO direccion (codigo_postal, region, ciudad, calle, numero) VALUES
+('12345', 'Metropolitana', 'Santiago', 'Av. Principal', 123),
+('23456', 'Valparaíso', 'Viña del Mar', 'Calle del Mar', 456),
+('34567', 'Biobío', 'Concepción', 'Av. Libertad', 789);
+
+-- 2. Insertar aseguradoras
+INSERT INTO aseguradora (id, nombre_empresa, nombre_contacto) VALUES
+('A004', 'Seguros Chile', 'Juan Pérez'),
+('A005', 'Mapfre', 'María González'),
+('A006', 'BCI Seguros', 'Carlos López');
+
+-- 3. Insertar personas (clientes y trabajadores)
+INSERT INTO persona (rut, nombre, apellido, tipo_persona, fecha_nac, direccion_codigo_postal, aseguradora_id) VALUES
+-- Clientes
+('11111111-1', 'Juan', 'Gonzales', 'Cliente', '1980-05-15', '12345', 'A004'),
+('22222222-2', 'María', 'Rosales', 'Cliente', '1985-08-20', '23456', 'A005'),
+('33333333-3', 'Carlos', 'López', 'Cliente', '1990-03-10', '34567', 'A006'),
+-- Empleados
+('44444444-4', 'Pedro', 'Mecánico', 'Empleado', '1975-11-25', '12345', NULL),
+('55555555-5', 'Ana', 'Técnica', 'Empleado', '1988-07-30', '23456', NULL),
+-- Administrador
+('66666666-6', 'Admin', 'Sistema', 'Administrador', '1982-01-01', '34567', NULL);
+
+-- Insertar teléfonos
+INSERT INTO telefono_persona (telefono, persona_id) VALUES
+('+56912345678', '11111111-1'),
+('+56987654321', '22222222-2'),
+('+56955555555', '33333333-3'),
+('+56944444444', '44444444-4'),
+('+56933333333', '55555555-5'),
+('+56922222222', '66666666-6');
+
+-- 4. Insertar marcas y modelos
+INSERT INTO marca (nombre) VALUES
+('Honda'),
+('Nissan');
+
+INSERT INTO modelo (nombre, marca_id) VALUES
+('Civic', 2),
+('Focus', 3),
+('Cruze', 4),
+('Sentra', 5),
+('Camry', 1),
+('Accord', 2);
+
+-- 5. Insertar tipos de vehículo
+INSERT INTO tipo_vehiculo (nombre) VALUES
+('Citycar'),
+('Coupé'),
+('Hatchback'),
+('Deportivo');
+
+INSERT INTO tipo_vehiculo(nombre) VALUES
+('Pickup');
+
+-- 6. Insertar vehículos
+INSERT INTO vehiculo (patente, color, motor, pais_origen, persona_rut) VALUES
+('MAY053', 'Rojo', '1.8L 4 cilindros', 'Japón', '11111111-1'),
+('DEF456', 'Azul', '2.0L 4 cilindros', 'Japón', '22222222-2'),
+('GHI789', 'Negro', '1.6L 4 cilindros', 'EE.UU.', '33333333-3'),
+('JKL012', 'Blanco', '2.4L 4 cilindros', 'Japón', '11111111-1'),
+('MNO345', 'Gris', '1.5L 4 cilindros', 'Japón', '22222222-2');
+
+-- Asignar modelos y tipos a vehículos
+INSERT INTO tener (vehiculo_id, tipo_vehiculo_id, modelo_id) VALUES
+('MAY053', 1, 1),  -- Toyota Corolla Sedán
+('DEF456', 1, 2),  -- Honda Civic Sedán
+('GHI789', 1, 3),  -- Ford Focus Sedán
+('JKL012', 1, 6),  -- Toyota Camry Sedán
+('MNO345', 2, 7);  -- Honda Accord SUV
+
+-- 7. Insertar averías comunes
+INSERT INTO averia (nombre) VALUES
+('Batería descargada'),
+('Frenos desgastados'),
+('Aceite bajo'),
+('Neumáticos desgastados'),
+('Problemas eléctricos'),
+('Sistema de refrigeración'),
+('Transmisión'),
+('Suspensión'),
+('Escape'),
+('Dirección');
+
+-- 8. Insertar repuestos/inventario
+INSERT INTO inventario (espacio) VALUES
+('Estantería A'),
+('Estantería B'),
+('Estantería C'),
+('Caja fuerte'),
+('Refrigerado');
+
+INSERT INTO pieza (codigo, nombre, categoria, descripcion, numero_pieza, cantidad, costo, inventario_id) VALUES
+('BAT001', 'Batería automotriz', 'Baterías', 'Batería 12V 60Ah', 'BAT-60AH', 10, 85000, 1),
+('ACE001', 'Aceite motor 5W30', 'Lubricantes', 'Aceite sintético 5W30 1L', 'OIL-5W30', 50, 12000, 5),
+('FIL001', 'Filtro de aceite', 'Filtros', 'Filtro de aceite estándar', 'FIL-OIL', 30, 8500, 2),
+('PAST01', 'Pastillas de freno', 'Frenos', 'Juego pastillas freno delantero', 'BRAKE-PAD', 20, 45000, 2),
+('NEU001', 'Neumático 185/65R15', 'Neumáticos', 'Neumático radial 185/65R15', 'TIRE-185', 15, 65000, 3),
+('BULB01', 'Bombilla H4', 'Electricidad', 'Bombilla halógena H4 60/55W', 'BULB-H4', 40, 3500, 2),
+('AIR01', 'Filtro de aire', 'Filtros', 'Filtro de aire motor', 'FIL-AIR', 25, 12500, 2),
+('BELT01', 'Correa distribución', 'Motor', 'Correa de distribución', 'BELT-TIM', 8, 32000, 2),
+('SPK01', 'Bujías', 'Motor', 'Juego de 4 bujías', 'SPARK-4', 30, 28000, 2),
+('RAD01', 'Líquido refrigerante', 'Refrigeración', 'Anticongelante 1L', 'COOL-1L', 40, 8500, 5);
+
+-- 9. Insertar mano de obra (servicios)
+INSERT INTO mano_de_obra (descripcion, costo) VALUES
+('Cambio de aceite y filtro', 25000),
+('Cambio de pastillas de freno', 35000),
+('Cambio de batería', 15000),
+('Alineación y balanceo', 30000),
+('Cambio de neumáticos', 20000),
+('Diagnóstico eléctrico', 20000),
+('Cambio de correa distribución', 50000),
+('Lavado y detailing', 30000),
+('Revisión general', 15000),
+('Cambio de amortiguadores', 45000);
+
+-- 10. Insertar órdenes de trabajo de prueba
+INSERT INTO orden_trabajo (fecha, descripcion, vehiculo_id, estado) VALUES
+(CURRENT_DATE - 2, 'Cambio de aceite y filtro. Revisión general del vehículo.', 'MAY053', 'Completada'),
+(CURRENT_DATE - 1, 'Problemas con los frenos. Necesita cambio de pastillas.', 'DEF456', 'En Proceso'),
+(CURRENT_DATE, 'Batería descargada. Necesita revisión del sistema eléctrico.', 'GHI789', 'Pendiente'),
+(CURRENT_DATE, 'Revisión de neumáticos y alineación.', 'JKL012', 'Pendiente'),
+(CURRENT_DATE - 3, 'Cambio completo de correa de distribución.', 'MNO345', 'Completada');
+
+INSERT INTO orden_trabajo (fecha, descripcion, vehiculo_id, estado) VALUES
+(CURRENT_DATE, 'Revisión de neumáticos y alineación.', 'JKL012', 'Pendiente');
+
+-- Asignar trabajadores a órdenes
+INSERT INTO trabajar (persona_id, orden_trabajo_id) VALUES
+('44444444-4', 1),  -- Pedro trabaja en orden 1
+('55555555-5', 2),  -- Ana trabaja en orden 2
+('44444444-4', 3),  -- Pedro trabaja en orden 3
+('55555555-5', 4),  -- Ana trabaja en orden 4
+('44444444-4', 5);  -- Pedro trabaja en orden 5
+
+-- Agregar averías a las órdenes
+INSERT INTO orden_averia (orden_trabajo_numero, averia_id) VALUES
+(1, 3),  -- Orden 1: Aceite bajo
+(2, 2),  -- Orden 2: Frenos desgastados
+(3, 1),  -- Orden 3: Batería descargada
+(3, 5),  -- Orden 3: Problemas eléctricos
+(4, 4),  -- Orden 4: Neumáticos desgastados
+(5, 7);  -- Orden 5: Transmisión
+
+-- Agregar repuestos usados
+INSERT INTO historial_repuestos_vehiculo (repuesto_codigo, vehiculo_patente, orden_trabajo_numero, cantidad_instalada, costo_unitario) VALUES
+('ACE001', 'MAY053', 1, 5, 12000),   -- 5L de aceite
+('FIL001', 'MAY053', 1, 1, 8500),    -- 1 filtro de aceite
+('PAST01', 'DEF456', 2, 1, 45000),   -- Pastillas de freno
+('BAT001', 'GHI789', 3, 1, 85000),   -- Batería nueva
+('NEU001', 'JKL012', 4, 4, 65000),   -- 4 neumáticos
+('BELT01', 'MNO345', 5, 1, 32000);   -- Correa de distribución
+
+-- 11. Insertar facturas de prueba
+INSERT INTO factura (total, neto, iva, metodo_pago, detalle_prestacion_servicio, fecha_emision, aseguradora_id, orden_trabajo_numero) VALUES
+(145000, 122000, 23000, 'Efectivo', 'Cambio de aceite y filtro. Revisión general.', CURRENT_DATE - 2, 'A004', 1),
+(80000, 67227, 12773, 'Tarjeta', 'Cambio de pastillas de freno delanteras.', CURRENT_DATE - 1, 'A005', 2),
+(100000, 84034, 15966, 'Transferencia', 'Cambio de batería y diagnóstico eléctrico.', CURRENT_DATE, 'A006', 3),
+(280000, 235294, 44706, 'Efectivo', 'Cambio de 4 neumáticos y alineación.', CURRENT_DATE, 'A004', 4),
+(82000, 68908, 13092, 'Tarjeta', 'Cambio de correa de distribución.', CURRENT_DATE - 3, 'A005', 5);
+
+-- 12. Insertar cotizaciones
+INSERT INTO cotizacion (fecha_emision, fecha_fin, descripcion, persona_rut, factura_id) VALUES
+(CURRENT_DATE - 2, CURRENT_DATE + 30, 'Cambio de aceite y mantenimiento general', '11111111-1', 1),
+(CURRENT_DATE - 1, CURRENT_DATE + 30, 'Reparación sistema de frenos', '22222222-2', 2),
+(CURRENT_DATE, CURRENT_DATE + 30, 'Cambio de batería y revisión eléctrica', '33333333-3', 3),
+(CURRENT_DATE, CURRENT_DATE + 30, 'Cambio de neumáticos y servicios relacionados', '11111111-1', 4),
+(CURRENT_DATE - 3, CURRENT_DATE + 30, 'Cambio de correa de distribución', '22222222-2', 5);
+
+-- Agregar piezas a cotizaciones
+INSERT INTO cotizacion_pieza (cotizacion_id, pieza_codigo, cantidad, costo_unitario) VALUES
+(1, 'ACE001', 5, 12000),
+(1, 'FIL001', 1, 8500),
+(2, 'PAST01', 1, 45000),
+(3, 'BAT001', 1, 85000),
+(4, 'NEU001', 4, 65000),
+(5, 'BELT01', 1, 32000);
+
+-- Agregar mano de obra a cotizaciones
+INSERT INTO figurar (cotizacion_id, mano_de_obra_id, costo_mano_obra) VALUES
+(1, 1, 25000),  -- Cambio de aceite
+(1, 9, 15000),  -- Revisión general
+(2, 2, 35000),  -- Cambio de frenos
+(3, 3, 15000),  -- Cambio de batería
+(3, 6, 20000),  -- Diagnóstico eléctrico
+(4, 5, 20000),  -- Cambio de neumáticos
+(4, 4, 30000),  -- Alineación
+(5, 7, 50000);  -- Cambio correa
+
+-- Mostrar mensaje de éxito
+SELECT 'Datos de prueba insertados correctamente' as mensaje;
